@@ -1,0 +1,7 @@
+me/
+__pycache__/
+*.pyc
+site.db
+.env
+instance/
+*.bat
