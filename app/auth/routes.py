@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from app.models import User
 from app.extensions import db, bcrypt
 from flask_login import login_user, logout_user, current_user, login_required
+from app.models import Job
 
 auth = Blueprint("auth", __name__)
 
@@ -70,3 +71,42 @@ def labour_dashboard():
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
     return render_template("labour/dashboard.html")
+
+@auth.route("/contractor/post-job", methods=["GET", "POST"])
+@login_required
+def post_job():
+    if current_user.role != "contractor":
+        flash("Access denied.", "danger")
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        description = request.form.get("description")
+        city = request.form.get("city")
+
+        job = Job(
+            title=title,
+            description=description,
+            city=city,
+            contractor=current_user
+        )
+
+        db.session.add(job)
+        db.session.commit()
+
+        flash("Job posted successfully!", "success")
+        return redirect(url_for("auth.contractor_dashboard"))
+
+    return render_template("contractor/post_job.html")
+
+@auth.route("/jobs")
+@login_required
+def view_jobs():
+    if current_user.role != "labour":
+        flash("Access denied.", "danger")
+        return redirect(url_for("auth.login"))
+
+    jobs = Job.query.order_by(Job.created_at.desc()).all()
+
+    return render_template("labour/jobs.html", jobs=jobs)
+

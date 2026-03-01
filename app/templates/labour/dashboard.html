@@ -5,6 +5,10 @@
 {% block content %}
 <h2>Welcome, {{ current_user.username }}</h2>
 <p>You are logged in as Labour.</p>
-
+<div>
+<a href="{{ url_for('auth.view_jobs') }}">View Available Jobs</a>
+</div>
+<div>
 <a href="{{ url_for('auth.logout') }}">Logout</a>
+</div>
 {% endblock %}

@@ -1,5 +1,6 @@
 from app.extensions import db, login_manager
 from flask_login import UserMixin
+from datetime import datetime
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -14,3 +15,19 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f"User('{self.username}', '{self.role}')"
+
+class Job(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    contractor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    contractor = db.relationship('User', backref='jobs')
+
+    def __repr__(self):
+        return f"Job('{self.title}', '{self.city}')"        
