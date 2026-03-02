@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Applications for {{ job.title }}</h2>
+
+{% if job.applications %}
+    {% for application in job.applications %}
+        <p>{{ application.labour.username }} applied at {{ application.applied_at }}</p>
+    {% endfor %}
+{% else %}
+    <p>No applications yet.</p>
+{% endif %}
+
+<a href="{{ url_for('auth.contractor_dashboard') }}">Back</a>
+{% endblock %}

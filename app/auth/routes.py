@@ -3,6 +3,7 @@ from app.models import User
 from app.extensions import db, bcrypt
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Job
+from app.models import Application
 
 auth = Blueprint("auth", __name__)
 
@@ -106,7 +107,53 @@ def view_jobs():
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
-    jobs = Job.query.order_by(Job.created_at.desc()).all()
+    city = request.args.get("city")
+
+    if city:
+        jobs = Job.query.filter(Job.city.ilike(f"%{city}%")).order_by(Job.created_at.desc()).all()
+    else:
+        jobs = Job.query.order_by(Job.created_at.desc()).all()
 
     return render_template("labour/jobs.html", jobs=jobs)
 
+@auth.route("/apply/<int:job_id>")
+@login_required
+def apply_job(job_id):
+    if current_user.role != "labour":
+        flash("Access denied.", "danger")
+        return redirect(url_for("auth.login"))
+
+    existing_application = Application.query.filter_by(
+        job_id=job_id,
+        labour_id=current_user.id
+    ).first()
+
+    if existing_application:
+        flash("You already applied for this job.", "info")
+        return redirect(url_for("auth.view_jobs"))
+
+    application = Application(
+        job_id=job_id,
+        labour_id=current_user.id
+    )
+
+    db.session.add(application)
+    db.session.commit()
+
+    flash("Application submitted successfully!", "success")
+    return redirect(url_for("auth.view_jobs"))    
+
+@auth.route("/contractor/applications/<int:job_id>")
+@login_required
+def view_applications(job_id):
+    if current_user.role != "contractor":
+        flash("Access denied.", "danger")
+        return redirect(url_for("auth.login"))
+
+    job = Job.query.get_or_404(job_id)
+
+    if job.contractor_id != current_user.id:
+        flash("Not authorized.", "danger")
+        return redirect(url_for("auth.contractor_dashboard"))
+
+    return render_template("contractor/applications.html", job=job)

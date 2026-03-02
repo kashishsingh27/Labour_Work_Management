@@ -3,6 +3,11 @@
 {% block title %}Available Jobs{% endblock %}
 
 {% block content %}
+<form method="GET">
+    <input type="text" name="city" placeholder="Filter by city">
+    <button type="submit">Search</button>
+</form>
+<br>
 <h2>Available Jobs</h2>
 
 {% if jobs %}
@@ -12,6 +17,10 @@
             <p>{{ job.description }}</p>
             <p><strong>City:</strong> {{ job.city }}</p>
             <p><small>Posted by: {{ job.contractor.username }}</small></p>
+             <a href="{{ url_for('auth.apply_job', job_id=job.id) }}"
+   style="display:inline-block; padding:5px 10px; background:#28a745; color:white; text-decoration:none;">
+    Apply
+</a>
         </div>
     {% endfor %}
 {% else %}

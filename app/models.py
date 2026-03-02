@@ -30,4 +30,15 @@ class Job(db.Model):
     contractor = db.relationship('User', backref='jobs')
 
     def __repr__(self):
-        return f"Job('{self.title}', '{self.city}')"        
+        return f"Job('{self.title}', '{self.city}')"    
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    labour_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    job = db.relationship('Job', backref='applications')
+    labour = db.relationship('User')        
