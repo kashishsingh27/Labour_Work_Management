@@ -119,41 +119,88 @@ def view_jobs():
 @auth.route("/apply/<int:job_id>")
 @login_required
 def apply_job(job_id):
-    if current_user.role != "labour":
-        flash("Access denied.", "danger")
-        return redirect(url_for("auth.login"))
 
+    if current_user.role != "labour":
+        flash("Only labour can apply for jobs.")
+        return redirect(url_for("auth.view_jobs"))
+
+    job = Job.query.get_or_404(job_id)
+
+    # Check duplicate
     existing_application = Application.query.filter_by(
-        job_id=job_id,
-        labour_id=current_user.id
+        labour_id=current_user.id,
+        job_id=job.id
     ).first()
 
     if existing_application:
-        flash("You already applied for this job.", "info")
+        flash("You have already applied to this job.")
         return redirect(url_for("auth.view_jobs"))
 
     application = Application(
-        job_id=job_id,
-        labour_id=current_user.id
+        labour_id=current_user.id,
+        job_id=job.id
     )
 
     db.session.add(application)
     db.session.commit()
 
-    flash("Application submitted successfully!", "success")
+    flash("Application submitted successfully!")
     return redirect(url_for("auth.view_jobs"))    
 
-@auth.route("/contractor/applications/<int:job_id>")
+
+@auth.route("/contractor/applications")
 @login_required
-def view_applications(job_id):
+def view_applications():
+
     if current_user.role != "contractor":
-        flash("Access denied.", "danger")
+        flash("Access denied.")
         return redirect(url_for("auth.login"))
 
-    job = Job.query.get_or_404(job_id)
+    # Get contractor jobs
+    jobs = Job.query.filter_by(contractor_id=current_user.id).all()
 
-    if job.contractor_id != current_user.id:
-        flash("Not authorized.", "danger")
+    # Collect applications
+    applications = []
+
+    for job in jobs:
+        for app in job.applications:
+            applications.append(app)
+
+    return render_template(
+        "contractor/applications.html",
+        applications=applications
+    )
+
+@auth.route("/application/<int:app_id>/accept")
+@login_required
+def accept_application(app_id):
+
+    application = Application.query.get_or_404(app_id)
+
+    if current_user.id != application.job.contractor_id:
+        flash("Unauthorized action.")
         return redirect(url_for("auth.contractor_dashboard"))
 
-    return render_template("contractor/applications.html", job=job)
+    application.status = "Accepted"
+    db.session.commit()
+
+    flash("Application accepted.")
+    return redirect(url_for("auth.view_applications"))
+
+
+@auth.route("/application/<int:app_id>/reject")
+@login_required
+def reject_application(app_id):
+
+    application = Application.query.get_or_404(app_id)
+
+    if current_user.id != application.job.contractor_id:
+        flash("Unauthorized action.")
+        return redirect(url_for("auth.contractor_dashboard"))
+
+    application.status = "Rejected"
+    db.session.commit()
+
+    flash("Application rejected.")
+    return redirect(url_for("auth.view_applications"))
+

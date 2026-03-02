@@ -35,10 +35,10 @@ class Job(db.Model):
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
-    labour_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    labour_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey("job.id"), nullable=False)
 
-    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="Pending")
 
-    job = db.relationship('Job', backref='applications')
-    labour = db.relationship('User')        
+    labour = db.relationship("User", backref="applications")
+    job = db.relationship("Job", backref="applications")       

@@ -1,15 +1,40 @@
 {% extends "base.html" %}
 
-{% block content %}
-<h2>Applications for {{ job.title }}</h2>
+{% block title %}Applications{% endblock %}
 
-{% if job.applications %}
-    {% for application in job.applications %}
-        <p>{{ application.labour.username }} applied at {{ application.applied_at }}</p>
+{% block content %}
+
+<h2>Job Applications</h2>
+
+{% if applications %}
+    {% for app in applications %}
+        <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px;">
+            
+            <h3>{{ app.job.title }}</h3>
+            
+            <p><strong>Labour:</strong> {{ app.labour.username }}</p>
+            
+            <p><strong>Status:</strong> {{ app.status }}</p>
+
+            {% if app.status == "Pending" %}
+                <a href="{{ url_for('auth.accept_application', app_id=app.id) }}">
+                    Accept
+                </a>
+
+                |
+
+                <a href="{{ url_for('auth.reject_application', app_id=app.id) }}">
+                    Reject
+                </a>
+            {% endif %}
+        </div>
     {% endfor %}
 {% else %}
     <p>No applications yet.</p>
 {% endif %}
 
-<a href="{{ url_for('auth.contractor_dashboard') }}">Back</a>
+<a href="{{ url_for('auth.contractor_dashboard') }}">
+    Back to Dashboard
+</a>
+
 {% endblock %}
