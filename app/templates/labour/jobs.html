@@ -4,8 +4,22 @@
 
 {% block content %}
 <form method="GET">
-    <input type="text" name="city" placeholder="Filter by city">
-    <button type="submit">Search</button>
+
+    <input type="text" name="city" placeholder="City">
+
+    <input type="text" name="pincode" placeholder="Pincode">
+
+    <input type="number" name="min_wage" placeholder="Minimum Wage">
+
+    <select name="work_type">
+        <option value="">Work Type</option>
+        <option value="Construction">Construction</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Plumbing">Plumbing</option>
+    </select>
+
+    <button type="submit">Filter</button>
+
 </form>
 <br>
 <h2>Available Jobs</h2>

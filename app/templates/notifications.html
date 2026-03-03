@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+
+<h2>Your Notifications</h2>
+
+{% if notifications %}
+    {% for n in notifications %}
+        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+            {{ n.message }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No notifications.</p>
+{% endif %}
+
+{% endblock %}

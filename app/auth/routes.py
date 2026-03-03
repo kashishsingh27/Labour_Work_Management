@@ -102,24 +102,65 @@ def post_job():
         db.session.add(job)
         db.session.commit()
 
+        #  Notifing labours in same city
+        labours = User.query.filter_by(role="labour", city=city).all()
+
+        for labour in labours:
+            notification = Notification(
+                user_id=labour.id,
+                message=f"New job posted in {city}: {title}"
+            )
+            db.session.add(notification)
+
+        db.session.commit()
+
         flash("Job posted successfully!", "success")
         return redirect(url_for("auth.contractor_dashboard"))
 
     return render_template("contractor/post_job.html")
 
+#@auth.route("/jobs")
+#@login_required
+#def view_jobs():
+#    if current_user.role != "labour":
+#        flash("Access denied.", "danger")
+#        return redirect(url_for("auth.login"))
+#
+#    city = request.args.get("city")
+#
+#    if city:
+#        jobs = Job.query.filter(Job.city.ilike(f"%{city}%")).order_by(Job.created_at.desc()).all()
+#    else:
+#        jobs = Job.query.order_by(Job.created_at.desc()).all()
+#
+#    return render_template("labour/jobs.html", jobs=jobs)*/
 @auth.route("/jobs")
 @login_required
 def view_jobs():
+
     if current_user.role != "labour":
-        flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
     city = request.args.get("city")
+    pincode = request.args.get("pincode")
+    min_wage = request.args.get("min_wage")
+    work_type = request.args.get("work_type")
+
+    query = Job.query
 
     if city:
-        jobs = Job.query.filter(Job.city.ilike(f"%{city}%")).order_by(Job.created_at.desc()).all()
-    else:
-        jobs = Job.query.order_by(Job.created_at.desc()).all()
+        query = query.filter(Job.city.ilike(f"%{city}%"))
+
+    if pincode:
+        query = query.filter(Job.pincode == pincode)
+
+    if min_wage:
+        query = query.filter(Job.wage >= int(min_wage))
+
+    if work_type:
+        query = query.filter(Job.work_type == work_type)
+
+    jobs = query.order_by(Job.created_at.desc()).all()
 
     return render_template("labour/jobs.html", jobs=jobs)
 
@@ -210,4 +251,17 @@ def reject_application(app_id):
 
     flash("Application rejected.")
     return redirect(url_for("auth.view_applications"))
+
+@auth.route("/notifications")
+@login_required
+def view_notifications():
+
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Notification.created_at.desc()).all()
+
+    return render_template(
+        "notifications.html",
+        notifications=notifications
+    )
 
