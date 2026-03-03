@@ -18,10 +18,11 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
         role = request.form.get("role")
+        city = request.form.get("city")
 
         hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        user = User(username=username, email=email, password=hashed_pw, role=role)
+        user = User(username=username, email=email, password=hashed_pw, role=role, city=city)
         db.session.add(user)
         db.session.commit()
 
@@ -84,11 +85,17 @@ def post_job():
         title = request.form.get("title")
         description = request.form.get("description")
         city = request.form.get("city")
+        pincode = request.form.get("pincode")
+        wage = request.form.get("wage")
+        work_type = request.form.get("work_type")
 
         job = Job(
             title=title,
             description=description,
             city=city,
+            pincode=pincode,
+            wage=wage,
+            work_type=work_type,
             contractor=current_user
         )
 
