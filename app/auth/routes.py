@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import User
+from app.models import User, Notification
 from app.extensions import db, bcrypt
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Job
