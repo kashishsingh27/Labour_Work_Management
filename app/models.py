@@ -66,5 +66,22 @@ class Notification(db.Model):
 
     user = db.relationship("User", backref="notifications")    
 
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    labour_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    contractor_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+    job_id = db.Column(db.Integer, db.ForeignKey("job.id"))
+
+    rating = db.Column(db.Integer)  # 1–5
+    review = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    labour = db.relationship("User", foreign_keys=[labour_id])
+    contractor = db.relationship("User", foreign_keys=[contractor_id])
+    job = db.relationship("Job")    
+
     
            

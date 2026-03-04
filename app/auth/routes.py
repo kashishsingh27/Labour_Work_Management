@@ -265,3 +265,29 @@ def view_notifications():
         notifications=notifications
     )
 
+@auth.route("/rate/<int:job_id>/<int:labour_id>", methods=["GET", "POST"])
+@login_required
+def rate_labour(job_id, labour_id):
+
+    if current_user.role != "contractor":
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        rating_value = int(request.form.get("rating"))
+        review = request.form.get("review")
+
+        rating = Rating(
+            labour_id=labour_id,
+            contractor_id=current_user.id,
+            job_id=job_id,
+            rating=rating_value,
+            review=review
+        )
+
+        db.session.add(rating)
+        db.session.commit()
+
+        flash("Labour rated successfully!", "success")
+        return redirect(url_for("auth.contractor_dashboard"))
+
+    return render_template("contractor/rate_labour.html")
