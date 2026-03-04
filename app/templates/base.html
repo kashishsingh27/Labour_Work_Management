@@ -75,32 +75,32 @@
 </head>
 <body>
 
-    <!-- 🔹 Navbar -->
-    {% if current_user.is_authenticated %}
-        <div class="navbar">
+   {% if current_user.is_authenticated %}
 
-            {% if current_user.role == "contractor" %}
-                <a href="{{ url_for('auth.contractor_dashboard') }}">Dashboard</a>
-            {% elif current_user.role == "labour" %}
-                <a href="{{ url_for('auth.labour_dashboard') }}">Dashboard</a>
+    <div class="navbar">
+
+        {% if current_user.role == "contractor" %}
+            <a href="{{ url_for('auth.contractor_dashboard') }}">Dashboard</a>
+        {% elif current_user.role == "labour" %}
+            <a href="{{ url_for('auth.labour_dashboard') }}">Dashboard</a>
+        {% endif %}
+
+        <a href="{{ url_for('auth.view_notifications') }}">
+            Notifications
+            {% set unread = current_user.notifications
+                |selectattr("is_read", "equalto", False)
+                |list
+                |length %}
+            {% if unread > 0 %}
+                <span class="badge">{{ unread }}</span>
             {% endif %}
+        </a>
 
-            <a href="{{ url_for('auth.view_notifications') }}">
-                Notifications
-                {% set unread = current_user.notifications
-                    |selectattr("is_read", "equalto", False)
-                    |list
-                    |length %}
-                {% if unread > 0 %}
-                    <span class="badge">{{ unread }}</span>
-                {% endif %}
-            </a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
 
-            <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
 
-        </div>
-    {% endif %}
-
+{% endif %}
     <div class="container">
 
         <!-- Flash Messages -->

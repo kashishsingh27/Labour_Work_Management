@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from app.models import User, Notification
+from app.models import User, Notification ,Rating
 from app.extensions import db, bcrypt
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Job
 from app.models import Application
+from sqlalchemy import func
 
 auth = Blueprint("auth", __name__)
 
@@ -69,10 +70,26 @@ def contractor_dashboard():
 @auth.route("/labour/dashboard")
 @login_required
 def labour_dashboard():
+
     if current_user.role != "labour":
-        flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
-    return render_template("labour/dashboard.html")
+
+    jobs_completed = Application.query.filter_by(
+        labour_id=current_user.id,
+        status="approved"
+    ).count()
+
+    avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
+        labour_id=current_user.id
+    ).scalar()
+
+    avg_rating = round(avg_rating, 2) if avg_rating else 0
+
+    return render_template(
+        "labour/dashboard.html",
+        jobs_completed=jobs_completed,
+        avg_rating=avg_rating
+    )
 
 @auth.route("/contractor/post-job", methods=["GET", "POST"])
 @login_required
@@ -108,7 +125,8 @@ def post_job():
         for labour in labours:
             notification = Notification(
                 user_id=labour.id,
-                message=f"New job posted in {city}: {title}"
+                message=f"New job posted in {city}: {title}",
+                job_id=job.id 
             )
             db.session.add(notification)
 
@@ -204,10 +222,8 @@ def view_applications():
         flash("Access denied.")
         return redirect(url_for("auth.login"))
 
-    # Get contractor jobs
     jobs = Job.query.filter_by(contractor_id=current_user.id).all()
 
-    # Collect applications
     applications = []
 
     for job in jobs:
@@ -260,6 +276,12 @@ def view_notifications():
         user_id=current_user.id
     ).order_by(Notification.created_at.desc()).all()
 
+    # Auto mark as read
+    for n in notifications:
+        n.is_read = True
+
+    db.session.commit()
+
     return render_template(
         "notifications.html",
         notifications=notifications
@@ -291,3 +313,11 @@ def rate_labour(job_id, labour_id):
         return redirect(url_for("auth.contractor_dashboard"))
 
     return render_template("contractor/rate_labour.html")
+
+@auth.route("/job/<int:job_id>")
+@login_required
+def view_single_job(job_id):
+
+    job = Job.query.get_or_404(job_id)
+
+    return render_template("labour/single_job.html", job=job)

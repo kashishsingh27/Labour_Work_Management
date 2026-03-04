@@ -8,6 +8,24 @@
 <div>
 <a href="{{ url_for('auth.view_jobs') }}">View Available Jobs</a>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<canvas id="performanceChart"></canvas>
+
+<script>
+const ctx = document.getElementById('performanceChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Jobs Completed', 'Average Rating'],
+        datasets: [{
+            label: 'Performance',
+            data: [{{ jobs_completed }}, {{ avg_rating }}],
+        }]
+    }
+});
+</script>
 <div>
 <a href="{{ url_for('auth.logout') }}">Logout</a>
 </div>

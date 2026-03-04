@@ -9,7 +9,9 @@
 {% if notifications %}
     {% for n in notifications %}
         <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-            {{ n.message }}
+            <a href="{{ url_for('auth.view_single_job', job_id=n.job_id) }}">
+                  {{ n.message }}
+            </a>
         </div>
     {% endfor %}
 {% else %}
