@@ -75,7 +75,7 @@ class Rating(db.Model):
 
     job_id = db.Column(db.Integer, db.ForeignKey("job.id"))
 
-    rating = db.Column(db.Integer)  # 1–5
+    rating = db.Column(db.Integer) 
     review = db.Column(db.Text)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

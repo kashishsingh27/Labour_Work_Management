@@ -21,6 +21,11 @@ def register():
         role = request.form.get("role")
         city = request.form.get("city")
 
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash("Email already registered. Please login.", "danger")
+            return redirect(url_for("auth.register"))
+
         hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
 
         user = User(username=username, email=email, password=hashed_pw, role=role, city=city)
@@ -61,10 +66,25 @@ def logout():
 @auth.route("/contractor/dashboard")
 @login_required
 def contractor_dashboard():
+
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
-    return render_template("contractor/dashboard.html")
+
+    jobs_posted = Job.query.filter_by(contractor_id=current_user.id).count()
+
+    applications_received = Application.query.join(Job).filter(
+        Job.contractor_id == current_user.id
+    ).count()
+
+    ratings_given = Rating.query.filter_by(contractor_id=current_user.id).count()
+
+    return render_template(
+        "contractor/dashboard.html",
+        jobs_posted=jobs_posted,
+        applications_received=applications_received,
+        ratings_given=ratings_given
+    )
 
 
 @auth.route("/labour/dashboard")
@@ -76,7 +96,7 @@ def labour_dashboard():
 
     jobs_completed = Application.query.filter_by(
         labour_id=current_user.id,
-        status="approved"
+        status="Accepted"
     ).count()
 
     avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(

@@ -3,17 +3,50 @@
 {% block title %}Contractor Dashboard{% endblock %}
 
 {% block content %}
-<h2>Welcome, {{ current_user.username }}</h2>
-<p>You are logged in as Contractor.</p>
-<div>
-<a href="{{ url_for('auth.view_applications') }}">
-    View Applications
-</a>
+
+<h2 class="mb-4">Welcome, {{ current_user.username }}</h2>
+
+<div class="row">
+
+    <div class="col-md-4">
+        <div class="card text-center shadow-sm p-3">
+            <h5>Jobs Posted</h5>
+            <h3>{{ jobs_posted }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center shadow-sm p-3">
+            <h5>Applications Received</h5>
+            <h3>{{ applications_received }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center shadow-sm p-3">
+            <h5>Ratings Given</h5>
+            <h3>{{ ratings_given }}</h3>
+        </div>
+    </div>
+
 </div>
-<div>
-<a href="{{ url_for('auth.post_job') }}">Post New Job</a>
+
+<hr class="my-4">
+
+<div class="mt-3">
+
+    <a class="btn btn-primary" href="{{ url_for('auth.post_job') }}">
+        Post New Job
+    </a>
+
+    <a class="btn btn-success" href="{{ url_for('auth.view_applications') }}">
+        View Applications
+    </a>
+
+    <a class="btn btn-danger" href="{{ url_for('auth.logout') }}">
+        Logout
+    </a>
+
 </div>
-<div>
-<a href="{{ url_for('auth.logout') }}">Logout</a>
-</div>
+
 {% endblock %}
