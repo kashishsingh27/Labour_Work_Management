@@ -1,21 +1,42 @@
 {% extends "base.html" %}
+
+{% block title %}Rate Worker{% endblock %}
+
 {% block content %}
 
-<h2>Rate Worker</h2>
+<h2 class="mb-4">Rate Worker</h2>
 
 <form method="POST">
-    <select name="rating" required>
-        <option value="">Select Rating</option>
-        <option value="1">1 ⭐</option>
-        <option value="2">2 ⭐⭐</option>
-        <option value="3">3 ⭐⭐⭐</option>
-        <option value="4">4 ⭐⭐⭐⭐</option>
-        <option value="5">5 ⭐⭐⭐⭐⭐</option>
-    </select>
 
-    <textarea name="review" placeholder="Write review"></textarea>
+    <div class="mb-3">
+        <label class="form-label">Rating</label>
 
-    <button type="submit">Submit Rating</button>
+        <select class="form-control" name="rating" required>
+            <option value="">Select Rating</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <textarea class="form-control"
+                  name="review"
+                  placeholder="Write a review (optional)">
+        </textarea>
+    </div>
+
+    <button class="btn btn-success" type="submit">
+        Submit Rating
+    </button>
+
 </form>
+
+<a class="btn btn-secondary mt-3"
+   href="{{ url_for('contractor.contractor_dashboard') }}">
+    Back to Dashboard
+</a>
 
 {% endblock %}

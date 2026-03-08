@@ -3,25 +3,67 @@
 {% block title %}Post Job{% endblock %}
 
 {% block content %}
-<h2>Post a Job</h2>
+
+<h2 class="mb-4">Post a New Job</h2>
 
 <form method="POST">
 
-    <input type="text" name="title" placeholder="Job Title" required>
+    <div class="mb-3">
+        <input class="form-control"
+               type="text"
+               name="title"
+               placeholder="Job Title"
+               required>
+    </div>
 
-    <textarea name="description" placeholder="Job Description" required></textarea>
+    <div class="mb-3">
+        <textarea class="form-control"
+                  name="description"
+                  placeholder="Job Description"
+                  required></textarea>
+    </div>
 
-    <input type="text" name="city" placeholder="City" required>
+    <div class="mb-3">
+        <input class="form-control"
+               type="text"
+               name="city"
+               placeholder="City"
+               required>
+    </div>
 
-    <input type="text" name="pincode" placeholder="Pincode" required>
+    <div class="mb-3">
+        <input class="form-control"
+               type="text"
+               name="pincode"
+               placeholder="Pincode"
+               required>
+    </div>
 
-    <input type="number" name="wage" placeholder="Wage" required>
+    <div class="mb-3">
+        <input class="form-control"
+               type="number"
+               name="wage"
+               placeholder="Daily Wage"
+               required>
+    </div>
 
-    <input type="text" name="work_type" placeholder="Enter Work Type (e.g., Welding, Carpentry)" required>
+    <div class="mb-3">
+        <input class="form-control"
+               type="text"
+               name="work_type"
+               placeholder="Work Type (Welding, Carpentry, etc.)"
+               required>
+    </div>
 
-    <button type="submit">Post Job</button>
+    <button class="btn btn-primary" type="submit">
+        Post Job
+    </button>
 
 </form>
 
-<a href="{{ url_for('auth.contractor_dashboard') }}">Back to Dashboard</a>
+<a class="btn btn-secondary mt-3"
+   href="{{ url_for('contractor.contractor_dashboard') }}">
+    Back to Dashboard
+</a>
+
 {% endblock %}

@@ -5,15 +5,18 @@
 {% block content %}
 <h2>Welcome, {{ current_user.username }}</h2>
 <p>You are logged in as Labour.</p>
-<div>
-<a href="{{ url_for('auth.view_jobs') }}">View Available Jobs</a>
-</div>
+
+<nav>
+    <a href="{{ url_for('labour.view_jobs') }}" class="btn btn-primary">View Available Jobs</a>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<canvas id="performanceChart"></canvas>
+<canvas id="performanceChart" aria-label="Labour performance chart" role="img"></canvas>
 
 <script>
-const ctx = document.getElementById('performanceChart');
+const ctx = document.getElementById('performanceChart').getContext('2d');
 
 new Chart(ctx, {
     type: 'bar',
@@ -22,11 +25,18 @@ new Chart(ctx, {
         datasets: [{
             label: 'Performance',
             data: [{{ jobs_completed }}, {{ avg_rating }}],
+            backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
+            borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+            borderWidth: 1
         }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
     }
 });
 </script>
-<div>
-<a href="{{ url_for('auth.logout') }}">Logout</a>
-</div>
 {% endblock %}

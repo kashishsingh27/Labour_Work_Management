@@ -35,7 +35,7 @@
         }
 
         .container {
-            max-width: 500px;
+            max-width: 900px;
             margin: auto;
             background: white;
             padding: 25px;
@@ -80,9 +80,9 @@
     <div class="navbar">
 
         {% if current_user.role == "contractor" %}
-            <a href="{{ url_for('auth.contractor_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
         {% elif current_user.role == "labour" %}
-            <a href="{{ url_for('auth.labour_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('labour.labour_dashboard') }}">Dashboard</a>
         {% endif %}
 
         <a href="{{ url_for('auth.view_notifications') }}">
