@@ -113,6 +113,12 @@ def accept_application(app_id):
         return redirect(url_for("contractor.contractor_dashboard"))
 
     application.status = "Accepted"
+    notification = Notification(
+        user_id=application.labour_id,
+        message=f"Your application for '{application.job.title}' was accepted.",
+        job_id=application.job_id
+        )
+    db.session.add(notification)
     db.session.commit()
 
     flash("Application accepted.")
@@ -130,28 +136,45 @@ def reject_application(app_id):
         return redirect(url_for("contractor.contractor_dashboard"))
 
     application.status = "Rejected"
+    notification = Notification(
+        user_id=application.labour_id,
+        message=f"Your application for '{application.job.title}' was rejected.",
+        job_id=application.job_id
+    )
+
+    db.session.add(notification)
     db.session.commit()
 
     flash("Application rejected.")
     return redirect(url_for("contractor.view_applications"))
 
 
-@contractor.route("/rate/<int:job_id>/<int:labour_id>", methods=["GET", "POST"])
+@contractor.route("/rate/<int:job_id>/<int:labour_id>", methods=["GET","POST"])
 @login_required
 def rate_labour(job_id, labour_id):
 
     if current_user.role != "contractor":
         return redirect(url_for("auth.login"))
 
+    existing_rating = Rating.query.filter_by(
+        job_id=job_id,
+        labour_id=labour_id,
+        contractor_id=current_user.id
+    ).first()
+
+    if existing_rating:
+        flash("You already rated this worker.", "warning")
+        return redirect(url_for("contractor.view_applications", job_id=job_id))
+
     if request.method == "POST":
 
-        rating_value = int(request.form.get("rating"))
+        rating_value = request.form.get("rating")
         review = request.form.get("review")
 
         rating = Rating(
+            job_id=job_id,
             labour_id=labour_id,
             contractor_id=current_user.id,
-            job_id=job_id,
             rating=rating_value,
             review=review
         )
@@ -159,7 +182,12 @@ def rate_labour(job_id, labour_id):
         db.session.add(rating)
         db.session.commit()
 
-        flash("Labour rated successfully!", "success")
+        flash("Worker rated successfully!", "success")
+
         return redirect(url_for("contractor.contractor_dashboard"))
 
-    return render_template("contractor/rate_labour.html")
+    return render_template(
+        "contractor/rate_labour.html",
+        job_id=job_id,
+        labour_id=labour_id
+    )
