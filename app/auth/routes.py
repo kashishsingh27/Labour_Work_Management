@@ -22,6 +22,7 @@ def register():
         password = request.form.get("password")
         role = request.form.get("role")
         city = request.form.get("city")
+        phone = request.form.get("phone")
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -30,7 +31,7 @@ def register():
 
         hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        user = User(username=username, email=email, password=hashed_pw, role=role, city=city)
+        user = User(username=username, email=email, password=hashed_pw, role=role, city=city ,phone=phone)
         db.session.add(user)
         db.session.commit()
 
