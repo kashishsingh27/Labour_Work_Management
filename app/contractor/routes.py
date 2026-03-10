@@ -76,6 +76,26 @@ def post_job():
 
         db.session.commit()
 
+        msg = Message(
+    subject="New Job Available in Your City",
+    recipients=[labour.email]
+)
+
+        msg.body = f"""
+    Hello {labour.username},
+
+    A new job has been posted in {city}.
+
+    Job Title: {title}
+    Wage: ₹{wage}
+
+    Login to the system to apply.
+
+    LWMS Team
+    """
+
+        mail.send(msg)
+
         flash("Job posted successfully!", "success")
         return redirect(url_for("contractor.contractor_dashboard"))
 
@@ -124,19 +144,31 @@ def accept_application(app_id):
     db.session.commit()
 
     msg = Message(
-    subject="Job Application Accepted",
-    recipients=[application.labour.email],
-    body=f"""
+    subject="Job Application Accepted - LWMS",
+    recipients=[application.labour.email]
+   )
+
+    msg.body = f"""
     Hello {application.labour.username},
 
-    Your application for the job '{application.job.title}' has been accepted.
+    Congratulations! Your application for the job has been accepted.
 
-    Contact the contractor soon to start work.
+    Job Details
+    -----------------------
+    Title: {application.job.title}
+    City: {application.job.city}
+    Wage: ₹{application.job.wage}
+
+    Contractor Details
+    -----------------------
+    Name: {current_user.username}
+    Phone: {current_user.phone}
+
+    Please contact the contractor to start the work.
 
     Regards,
-    Construction Job Portal
+    Labour Work Management System(LWMS)
     """
-    )
 
     mail.send(msg)
 

@@ -5,6 +5,9 @@ from sqlalchemy import func
 from app.extensions import db
 from app.models import Job, Application, Rating
 
+from flask_mail import Message
+from app.extensions import mail
+
 labour = Blueprint("labour", __name__, url_prefix="/labour")
 
 
@@ -90,6 +93,27 @@ def apply_job(job_id):
 
     db.session.add(application)
     db.session.commit()
+
+    msg = Message(
+    subject="New Job Application Received",
+    recipients=[job.contractor.email]
+)
+
+    msg.body = f"""
+    Hello {job.contractor.username},
+
+    You have received a new application for your job:
+
+    Job Title: {job.title}
+
+    Applicant: {current_user.username}
+
+    Login to view and manage applications.
+
+    LWMS Team
+    """
+
+    mail.send(msg)    
 
     flash("Application submitted successfully!")
 
