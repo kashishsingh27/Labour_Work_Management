@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Job, Application, Notification, Rating, User
+from flask_mail import Message
+from app.extensions import mail
 
 
 contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
@@ -120,6 +122,23 @@ def accept_application(app_id):
         )
     db.session.add(notification)
     db.session.commit()
+
+    msg = Message(
+    subject="Job Application Accepted",
+    recipients=[application.labour.email],
+    body=f"""
+    Hello {application.labour.username},
+
+    Your application for the job '{application.job.title}' has been accepted.
+
+    Contact the contractor soon to start work.
+
+    Regards,
+    Construction Job Portal
+    """
+    )
+
+    mail.send(msg)
 
     flash("Application accepted.")
     return redirect(url_for("contractor.view_applications"))

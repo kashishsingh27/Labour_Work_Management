@@ -5,6 +5,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Job
 from app.models import Application
 from sqlalchemy import func
+from flask_mail import Message
+from app.extensions import mail
 
 auth = Blueprint("auth", __name__)
 
@@ -82,3 +84,5 @@ def view_notifications():
         "notifications.html",
         notifications=notifications
     )
+
+
