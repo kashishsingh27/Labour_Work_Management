@@ -63,23 +63,23 @@ def post_job():
         db.session.add(job)
         db.session.commit()
 
-        # notify labours
+    # notify labours
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
             notification = Notification(
-                user_id=labour.id,
-                message=f"New job posted in {city}: {title}",
-                job_id=job.id
+            user_id=labour.id,
+            message=f"New job posted in {city}: {title}",
+            job_id=job.id
             )
-            db.session.add(notification)
-
+        db.session.add(notification)
         db.session.commit()
 
         msg = Message(
-    subject="New Job Available in Your City",
-    recipients=[labour.email]
-)
+            subject="New Job Available in Your City",
+            recipients=[labour.email]
+        )
+
 
         msg.body = f"""
     Hello {labour.username},
