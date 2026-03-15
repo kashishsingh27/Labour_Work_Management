@@ -46,6 +46,8 @@ def post_job():
         title = request.form.get("title")
         description = request.form.get("description")
         city = request.form.get("city")
+        locality = request.form.get("locality")
+        landmark = request.form.get("landmark")
         pincode = request.form.get("pincode")
         wage = request.form.get("wage")
         work_type = request.form.get("work_type")
@@ -54,6 +56,8 @@ def post_job():
             title=title,
             description=description,
             city=city,
+            locality=locality,
+            landmark=landmark,
             pincode=pincode,
             wage=wage,
             work_type=work_type,
@@ -63,38 +67,40 @@ def post_job():
         db.session.add(job)
         db.session.commit()
 
-    # notify labours
+        # notify labours
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
+
             notification = Notification(
-            user_id=labour.id,
-            message=f"New job posted in {city}: {title}",
-            job_id=job.id
+                user_id=labour.id,
+                message=f"New job posted in {city}: {title}",
+                job_id=job.id
             )
-        db.session.add(notification)
+
+            db.session.add(notification)
+
+            msg = Message(
+                subject="New Job Available in Your City",
+                recipients=[labour.email]
+            )
+
+            msg.body = f"""
+Hello {labour.username},
+
+A new job has been posted in {city}.
+
+Job Title: {title}
+Wage: ₹{wage}
+
+Login to the system to apply.
+
+LWMS Team
+"""
+
+            mail.send(msg)
+
         db.session.commit()
-
-        msg = Message(
-            subject="New Job Available in Your City",
-            recipients=[labour.email]
-        )
-
-
-        msg.body = f"""
-    Hello {labour.username},
-
-    A new job has been posted in {city}.
-
-    Job Title: {title}
-    Wage: ₹{wage}
-
-    Login to the system to apply.
-
-    LWMS Team
-    """
-
-        mail.send(msg)
 
         flash("Job posted successfully!", "success")
         return redirect(url_for("contractor.contractor_dashboard"))

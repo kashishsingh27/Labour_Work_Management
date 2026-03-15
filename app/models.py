@@ -38,6 +38,8 @@ class Job(db.Model):
     pincode = db.Column(db.String(10))
     wage = db.Column(db.Integer)
     work_type = db.Column(db.String(50))
+    locality = db.Column(db.String(150), nullable=False)
+    landmark = db.Column(db.String(150))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
