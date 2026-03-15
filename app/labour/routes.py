@@ -120,10 +120,18 @@ def apply_job(job_id):
     return redirect(url_for("labour.view_jobs"))
 
 
-@labour.route("/job/<int:job_id>")
+@labour.route("/job/<int:job_id>/simple")
 @login_required
 def view_single_job(job_id):
 
     job = Job.query.get_or_404(job_id)
 
     return render_template("labour/single_job.html", job=job)
+
+@labour.route("/job/<int:job_id>")
+@login_required
+def job_detail(job_id):
+
+    job = Job.query.get_or_404(job_id)
+
+    return render_template("labour/job_details.html", job=job)
