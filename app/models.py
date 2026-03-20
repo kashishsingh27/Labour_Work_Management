@@ -23,7 +23,8 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(200), nullable=False)
 
     role = db.Column(db.String(20), nullable=False)
-    city = db.Column(db.String(50))   # 👈 ADD THIS
+    city = db.Column(db.String(50))   
+    phone = db.Column(db.String(15))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -37,6 +38,8 @@ class Job(db.Model):
     pincode = db.Column(db.String(10))
     wage = db.Column(db.Integer)
     work_type = db.Column(db.String(50))
+    locality = db.Column(db.String(150), nullable=False)
+    landmark = db.Column(db.String(150))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

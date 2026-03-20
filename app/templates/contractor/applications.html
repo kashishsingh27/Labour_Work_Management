@@ -4,36 +4,64 @@
 
 {% block content %}
 
-<h2>Job Applications</h2>
+<h2 class="mb-4">Job Applications</h2>
 
 {% if applications %}
+
     {% for app in applications %}
-        <div style="border:1px solid #ccc; padding:15px; margin-bottom:15px;">
-            
-            <h3>{{ app.job.title }}</h3>
-            
-            <p><strong>Labour:</strong> {{ app.labour.username }}</p>
-            
-            <p><strong>Status:</strong> {{ app.status }}</p>
+
+        <div class="card mb-3 p-3">
+
+            <h4>{{ app.job.title }}</h4>
+
+            <p>
+                <strong>Worker:</strong> {{ app.labour.username }}
+            </p>
+
+            <p>
+                <strong>Status:</strong>
+                <span class="badge bg-secondary">{{ app.status }}</span>
+            </p>
+
+            {% if app.status == "Accepted" %}
+
+                <a class="btn btn-primary btn-sm"
+                   href="{{ url_for('contractor.rate_labour',
+                   job_id=app.job.id,
+                   labour_id=app.labour.id) }}">
+
+                   Rate Worker
+
+                </a>
+
+            {% endif %}
 
             {% if app.status == "Pending" %}
-                <a href="{{ url_for('auth.accept_application', app_id=app.id) }}">
+
+                <a class="btn btn-success btn-sm"
+                   href="{{ url_for('contractor.accept_application', app_id=app.id) }}">
                     Accept
                 </a>
 
-                |
-
-                <a href="{{ url_for('auth.reject_application', app_id=app.id) }}">
+                <a class="btn btn-danger btn-sm"
+                   href="{{ url_for('contractor.reject_application', app_id=app.id) }}">
                     Reject
                 </a>
+
             {% endif %}
+
         </div>
+
     {% endfor %}
+
 {% else %}
-    <p>No applications yet.</p>
+
+<p>No applications yet.</p>
+
 {% endif %}
 
-<a href="{{ url_for('auth.contractor_dashboard') }}">
+<a class="btn btn-secondary mt-3"
+   href="{{ url_for('contractor.contractor_dashboard') }}">
     Back to Dashboard
 </a>
 

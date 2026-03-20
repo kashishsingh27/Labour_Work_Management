@@ -5,6 +5,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Job
 from app.models import Application
 from sqlalchemy import func
+from flask_mail import Message
+from app.extensions import mail
 
 auth = Blueprint("auth", __name__)
 
@@ -20,6 +22,7 @@ def register():
         password = request.form.get("password")
         role = request.form.get("role")
         city = request.form.get("city")
+        phone = request.form.get("phone")
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -28,7 +31,7 @@ def register():
 
         hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        user = User(username=username, email=email, password=hashed_pw, role=role, city=city)
+        user = User(username=username, email=email, password=hashed_pw, role=role, city=city ,phone=phone)
         db.session.add(user)
         db.session.commit()
 
@@ -49,9 +52,9 @@ def login():
             login_user(user)
 
             if user.role == "contractor":
-                return redirect(url_for("auth.contractor_dashboard"))
+                return redirect(url_for("contractor.contractor_dashboard"))
             else:
-                return redirect(url_for("auth.labour_dashboard"))
+                return redirect(url_for("labour.labour_dashboard"))
 
         flash("Login unsuccessful", "danger")
 
@@ -63,230 +66,6 @@ def logout():
     logout_user()
     return redirect(url_for("auth.login"))
 
-@auth.route("/contractor/dashboard")
-@login_required
-def contractor_dashboard():
-
-    if current_user.role != "contractor":
-        flash("Access denied.", "danger")
-        return redirect(url_for("auth.login"))
-
-    jobs_posted = Job.query.filter_by(contractor_id=current_user.id).count()
-
-    applications_received = Application.query.join(Job).filter(
-        Job.contractor_id == current_user.id
-    ).count()
-
-    ratings_given = Rating.query.filter_by(contractor_id=current_user.id).count()
-
-    return render_template(
-        "contractor/dashboard.html",
-        jobs_posted=jobs_posted,
-        applications_received=applications_received,
-        ratings_given=ratings_given
-    )
-
-
-@auth.route("/labour/dashboard")
-@login_required
-def labour_dashboard():
-
-    if current_user.role != "labour":
-        return redirect(url_for("auth.login"))
-
-    jobs_completed = Application.query.filter_by(
-        labour_id=current_user.id,
-        status="Accepted"
-    ).count()
-
-    avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
-        labour_id=current_user.id
-    ).scalar()
-
-    avg_rating = round(avg_rating, 2) if avg_rating else 0
-
-    return render_template(
-        "labour/dashboard.html",
-        jobs_completed=jobs_completed,
-        avg_rating=avg_rating
-    )
-
-@auth.route("/contractor/post-job", methods=["GET", "POST"])
-@login_required
-def post_job():
-    if current_user.role != "contractor":
-        flash("Access denied.", "danger")
-        return redirect(url_for("auth.login"))
-
-    if request.method == "POST":
-        title = request.form.get("title")
-        description = request.form.get("description")
-        city = request.form.get("city")
-        pincode = request.form.get("pincode")
-        wage = request.form.get("wage")
-        work_type = request.form.get("work_type")
-
-        job = Job(
-            title=title,
-            description=description,
-            city=city,
-            pincode=pincode,
-            wage=wage,
-            work_type=work_type,
-            contractor=current_user
-        )
-
-        db.session.add(job)
-        db.session.commit()
-
-        #  Notifing labours in same city
-        labours = User.query.filter_by(role="labour", city=city).all()
-
-        for labour in labours:
-            notification = Notification(
-                user_id=labour.id,
-                message=f"New job posted in {city}: {title}",
-                job_id=job.id 
-            )
-            db.session.add(notification)
-
-        db.session.commit()
-
-        flash("Job posted successfully!", "success")
-        return redirect(url_for("auth.contractor_dashboard"))
-
-    return render_template("contractor/post_job.html")
-
-#@auth.route("/jobs")
-#@login_required
-#def view_jobs():
-#    if current_user.role != "labour":
-#        flash("Access denied.", "danger")
-#        return redirect(url_for("auth.login"))
-#
-#    city = request.args.get("city")
-#
-#    if city:
-#        jobs = Job.query.filter(Job.city.ilike(f"%{city}%")).order_by(Job.created_at.desc()).all()
-#    else:
-#        jobs = Job.query.order_by(Job.created_at.desc()).all()
-#
-#    return render_template("labour/jobs.html", jobs=jobs)*/
-@auth.route("/jobs")
-@login_required
-def view_jobs():
-
-    if current_user.role != "labour":
-        return redirect(url_for("auth.login"))
-
-    city = request.args.get("city")
-    pincode = request.args.get("pincode")
-    min_wage = request.args.get("min_wage")
-    work_type = request.args.get("work_type")
-
-    query = Job.query
-
-    if city:
-        query = query.filter(Job.city.ilike(f"%{city}%"))
-
-    if pincode:
-        query = query.filter(Job.pincode == pincode)
-
-    if min_wage:
-        query = query.filter(Job.wage >= int(min_wage))
-
-    if work_type:
-        query = query.filter(Job.work_type == work_type)
-
-    jobs = query.order_by(Job.created_at.desc()).all()
-
-    return render_template("labour/jobs.html", jobs=jobs)
-
-@auth.route("/apply/<int:job_id>")
-@login_required
-def apply_job(job_id):
-
-    if current_user.role != "labour":
-        flash("Only labour can apply for jobs.")
-        return redirect(url_for("auth.view_jobs"))
-
-    job = Job.query.get_or_404(job_id)
-
-    # Check duplicate
-    existing_application = Application.query.filter_by(
-        labour_id=current_user.id,
-        job_id=job.id
-    ).first()
-
-    if existing_application:
-        flash("You have already applied to this job.")
-        return redirect(url_for("auth.view_jobs"))
-
-    application = Application(
-        labour_id=current_user.id,
-        job_id=job.id
-    )
-
-    db.session.add(application)
-    db.session.commit()
-
-    flash("Application submitted successfully!")
-    return redirect(url_for("auth.view_jobs"))    
-
-
-@auth.route("/contractor/applications")
-@login_required
-def view_applications():
-
-    if current_user.role != "contractor":
-        flash("Access denied.")
-        return redirect(url_for("auth.login"))
-
-    jobs = Job.query.filter_by(contractor_id=current_user.id).all()
-
-    applications = []
-
-    for job in jobs:
-        for app in job.applications:
-            applications.append(app)
-
-    return render_template(
-        "contractor/applications.html",
-        applications=applications
-    )
-
-@auth.route("/application/<int:app_id>/accept")
-@login_required
-def accept_application(app_id):
-
-    application = Application.query.get_or_404(app_id)
-
-    if current_user.id != application.job.contractor_id:
-        flash("Unauthorized action.")
-        return redirect(url_for("auth.contractor_dashboard"))
-
-    application.status = "Accepted"
-    db.session.commit()
-
-    flash("Application accepted.")
-    return redirect(url_for("auth.view_applications"))
-
-
-@auth.route("/application/<int:app_id>/reject")
-@login_required
-def reject_application(app_id):
-
-    application = Application.query.get_or_404(app_id)
-
-    if current_user.id != application.job.contractor_id:
-        flash("Unauthorized action.")
-        return redirect(url_for("auth.contractor_dashboard"))
-
-    application.status = "Rejected"
-    db.session.commit()
-
-    flash("Application rejected.")
-    return redirect(url_for("auth.view_applications"))
 
 @auth.route("/notifications")
 @login_required
@@ -307,37 +86,5 @@ def view_notifications():
         notifications=notifications
     )
 
-@auth.route("/rate/<int:job_id>/<int:labour_id>", methods=["GET", "POST"])
-@login_required
-def rate_labour(job_id, labour_id):
 
-    if current_user.role != "contractor":
-        return redirect(url_for("auth.login"))
 
-    if request.method == "POST":
-        rating_value = int(request.form.get("rating"))
-        review = request.form.get("review")
-
-        rating = Rating(
-            labour_id=labour_id,
-            contractor_id=current_user.id,
-            job_id=job_id,
-            rating=rating_value,
-            review=review
-        )
-
-        db.session.add(rating)
-        db.session.commit()
-
-        flash("Labour rated successfully!", "success")
-        return redirect(url_for("auth.contractor_dashboard"))
-
-    return render_template("contractor/rate_labour.html")
-
-@auth.route("/job/<int:job_id>")
-@login_required
-def view_single_job(job_id):
-
-    job = Job.query.get_or_404(job_id)
-
-    return render_template("labour/single_job.html", job=job)
