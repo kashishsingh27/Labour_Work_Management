@@ -1,33 +1,603 @@
 {% extends "base.html" %}
+{% block title %}Register — LWMS{% endblock %}
 
-{% block title %}Register{% endblock %}
+{% block head %}
+<style>
+    .main-content { padding: 0 !important; max-width: 100% !important; }
+
+    .auth-wrapper {
+        min-height: calc(100vh - 64px);
+        background: linear-gradient(160deg, #eef4ff 0%, #f0f9ff 50%, #e8f4fd 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 56px 32px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-theme="dark"] .auth-wrapper {
+        background: linear-gradient(160deg, #0d1117 0%, #0f1624 50%, #0a1628 100%);
+    }
+
+    /* ── Decorative blobs ── */
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(72px);
+        opacity: 0.22;
+        animation: floatBlob 9s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    [data-theme="dark"] .bg-blob { opacity: 0.10; }
+
+    .blob-1 {
+        width: 480px; height: 480px;
+        background: radial-gradient(circle, #93c5fd, #3b82f6);
+        top: -140px; left: -120px;
+        animation-delay: 0s;
+    }
+
+    .blob-2 {
+        width: 360px; height: 360px;
+        background: radial-gradient(circle, #6ee7b7, #059669);
+        bottom: -100px; right: -80px;
+        animation-delay: 3s;
+    }
+
+    .blob-3 {
+        width: 260px; height: 260px;
+        background: radial-gradient(circle, #bfdbfe, #60a5fa);
+        top: 40%; right: 8%;
+        animation-delay: 5.5s;
+    }
+
+    .blob-4 {
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, #a7f3d0, #34d399);
+        top: 15%; left: 12%;
+        animation-delay: 2s;
+    }
+
+    @keyframes floatBlob {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50%       { transform: translateY(-28px) scale(1.04); }
+    }
+
+    /* Everything else sits above the blobs */
+    .auth-top, .role-cards, .form-section { position: relative; z-index: 1; }
+
+    .auth-top {
+        text-align: center;
+        margin-bottom: 44px;
+    }
+
+    .auth-top h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 8px;
+    }
+
+    .auth-top p {
+        color: var(--text-muted);
+        font-size: 0.92rem;
+        margin: 0;
+    }
+
+    /* Role cards */
+    .role-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        width: 100%;
+        max-width: 1060px;
+        margin-bottom: 28px;
+    }
+
+    .role-card {
+        background: rgba(255,255,255,0.78);
+        border: 1.5px solid rgba(200,220,255,0.7);
+        border-radius: 20px;
+        padding: 56px 52px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 24px rgba(37,99,235,0.07);
+        position: relative;
+        backdrop-filter: blur(16px);
+        animation: fadeInUp 0.5s ease both;
+    }
+
+    .role-card:nth-child(1) { animation-delay: 0.05s; }
+    .role-card:nth-child(2) { animation-delay: 0.15s; }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    [data-theme="dark"] .role-card {
+        background: rgba(22,26,42,0.75);
+        border-color: rgba(59,130,246,0.18);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    }
+
+    .role-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 40px rgba(37,99,235,0.13);
+        border-color: rgba(37,99,235,0.3);
+    }
+
+    .role-card.active.contractor-card {
+        border-color: #2563eb;
+        box-shadow: 0 10px 36px rgba(37,99,235,0.2);
+        transform: translateY(-6px);
+    }
+
+    .role-card.active.labour-card {
+        border-color: #059669;
+        box-shadow: 0 10px 36px rgba(5,150,105,0.2);
+        transform: translateY(-6px);
+    }
+
+    .active-check {
+        position: absolute;
+        top: 16px; right: 16px;
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem;
+        color: white;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.2s ease;
+    }
+
+    .contractor-card .active-check { background: #2563eb; }
+    .labour-card .active-check    { background: #059669; }
+    .role-card.active .active-check { opacity: 1; transform: scale(1); }
+
+    .role-card-icon {
+        width: 84px; height: 84px;
+        border-radius: 20px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+        transition: transform 0.25s ease;
+    }
+
+    .role-card:hover .role-card-icon,
+    .role-card.active .role-card-icon { transform: scale(1.1); }
+
+    .contractor-card .role-card-icon { background: #eff6ff; color: #2563eb; }
+    .labour-card    .role-card-icon  { background: #f0fdf4; color: #059669; }
+
+    [data-theme="dark"] .contractor-card .role-card-icon { background: rgba(37,99,235,0.15); }
+    [data-theme="dark"] .labour-card    .role-card-icon  { background: rgba(5,150,105,0.15); }
+
+    .role-card-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        padding: 3px 12px;
+        border-radius: 20px;
+    }
+
+    .contractor-card .role-card-label { color: #2563eb; background: #eff6ff; }
+    .labour-card    .role-card-label  { color: #059669; background: #f0fdf4; }
+
+    [data-theme="dark"] .contractor-card .role-card-label { background: rgba(37,99,235,0.15); }
+    [data-theme="dark"] .labour-card    .role-card-label  { background: rgba(5,150,105,0.15); }
+
+    .role-card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+
+    .role-card-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.7;
+        margin-bottom: 28px;
+        max-width: 300px;
+    }
+
+    /* Feature bullets */
+    .role-features {
+        list-style: none;
+        padding: 0; margin: 0 0 28px;
+        text-align: left;
+        width: 100%;
+    }
+
+    .role-features li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        padding: 5px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .role-features li:last-child { border-bottom: none; }
+
+    .role-features li i {
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .contractor-card .role-features li i { color: #2563eb; }
+    .labour-card    .role-features li i  { color: #059669; }
+
+    /* Buttons */
+    .role-register-btn {
+        padding: 10px 32px;
+        border-radius: 10px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1.5px solid;
+    }
+
+    .contractor-card .role-register-btn {
+        background: #eff6ff; color: #2563eb; border-color: #bfdbfe;
+    }
+
+    .contractor-card .role-register-btn:hover,
+    .contractor-card.active .role-register-btn {
+        background: #2563eb; color: white; border-color: #2563eb;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+
+    .labour-card .role-register-btn {
+        background: #f0fdf4; color: #059669; border-color: #a7f3d0;
+    }
+
+    .labour-card .role-register-btn:hover,
+    .labour-card.active .role-register-btn {
+        background: #059669; color: white; border-color: #059669;
+        box-shadow: 0 4px 14px rgba(5,150,105,0.3);
+    }
+
+    .role-login-link {
+        margin-top: 14px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .contractor-card .role-login-link a { color: #2563eb; font-weight: 600; }
+    .labour-card    .role-login-link a  { color: #059669; font-weight: 600; }
+
+    /* Form section */
+    .form-section {
+        width: 100%;
+        max-width: 1060px;
+        background: rgba(255,255,255,0.78);
+        border: 1.5px solid rgba(200,220,255,0.7);
+        border-radius: 20px;
+        padding: 36px 44px;
+        box-shadow: 0 4px 24px rgba(37,99,235,0.07);
+        backdrop-filter: blur(16px);
+        display: none;
+        animation: slideUp 0.3s ease;
+    }
+
+    [data-theme="dark"] .form-section {
+        background: rgba(22,26,42,0.75);
+        border-color: rgba(59,130,246,0.18);
+    }
+
+    .form-section.visible { display: block; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .badge-contractor { background: #eff6ff; color: #2563eb; }
+    .badge-labour     { background: #f0fdf4; color: #059669; }
+
+    [data-theme="dark"] .badge-contractor { background: rgba(37,99,235,0.15); }
+    [data-theme="dark"] .badge-labour     { background: rgba(5,150,105,0.15); }
+
+    .form-header-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .form-input {
+        width: 100%;
+        background: rgba(248,251,255,0.9);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 14px 10px 36px;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    [data-theme="dark"] .form-input { background: rgba(15,17,23,0.5); }
+
+    .form-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    .form-input::placeholder { color: var(--text-muted); }
+
+    .input-icon {
+        position: absolute;
+        left: 11px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        pointer-events: none;
+    }
+
+    .eye-icon {
+        position: absolute;
+        right: 11px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+
+    .form-footer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .submit-btn {
+        padding: 11px 36px;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+    }
+
+    .submit-contractor { background: #2563eb; }
+    .submit-contractor:hover { background: #1d4ed8; box-shadow: 0 4px 14px rgba(37,99,235,0.3); transform: translateY(-1px); }
+
+    .submit-labour { background: #059669; }
+    .submit-labour:hover { background: #047857; box-shadow: 0 4px 14px rgba(5,150,105,0.3); transform: translateY(-1px); }
+
+    .auth-footer { font-size: 0.83rem; color: var(--text-muted); }
+    .auth-footer a { color: var(--accent); font-weight: 600; }
+
+    @media (max-width: 680px) {
+        .role-cards { grid-template-columns: 1fr; max-width: 420px; }
+        .form-section { padding: 24px 20px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .form-group.full { grid-column: 1; }
+        .blob-1 { width: 280px; height: 280px; }
+        .blob-2 { width: 220px; height: 220px; }
+        .blob-3, .blob-4 { display: none; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h2>Create Account</h2>
+<div class="auth-wrapper">
 
-<form method="POST">
+    <!-- Background blobs -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+    <div class="bg-blob blob-4"></div>
 
-    <input type="text" name="username" placeholder="Username" required>
+    <div class="auth-top">
+        <h2>Join LWMS</h2>
+        <p>Choose how you want to use the platform</p>
+    </div>
 
-    <input type="email" name="email" placeholder="Email" required>
+    <div class="role-cards">
 
-    <input type="password" name="password" placeholder="Password" required>
+        <div class="role-card contractor-card" id="card-contractor" onclick="selectRole('contractor')">
+            <div class="active-check"><i class="bi bi-check"></i></div>
+            <div class="role-card-icon"><i class="bi bi-building"></i></div>
+            <div class="role-card-label">For Contractors</div>
+            <div class="role-card-title">I'm a Contractor</div>
+            <p class="role-card-desc">Post jobs, hire skilled workers and manage your workforce all in one place.</p>
+            <ul class="role-features">
+                <li><i class="bi bi-check-circle-fill"></i> Post unlimited jobs</li>
+                <li><i class="bi bi-check-circle-fill"></i> Review &amp; accept applications</li>
+                <li><i class="bi bi-check-circle-fill"></i> Rate workers after completion</li>
+                <li><i class="bi bi-check-circle-fill"></i> Email notifications to workers</li>
+            </ul>
+            <button class="role-register-btn" type="button">Register as Contractor</button>
+            <div class="role-login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></div>
+        </div>
 
-    <input type="text" name="city" placeholder="City" required>
+        <div class="role-card labour-card" id="card-labour" onclick="selectRole('labour')">
+            <div class="active-check"><i class="bi bi-check"></i></div>
+            <div class="role-card-icon"><i class="bi bi-person-workspace"></i></div>
+            <div class="role-card-label">For Workers</div>
+            <div class="role-card-title">I'm a Labour Worker</div>
+            <p class="role-card-desc">Browse jobs near you, apply instantly and build your reputation with ratings.</p>
+            <ul class="role-features">
+                <li><i class="bi bi-check-circle-fill"></i> Browse jobs in your city</li>
+                <li><i class="bi bi-check-circle-fill"></i> One-click job applications</li>
+                <li><i class="bi bi-check-circle-fill"></i> Track application status</li>
+                <li><i class="bi bi-check-circle-fill"></i> Build rating &amp; reputation</li>
+            </ul>
+            <button class="role-register-btn" type="button">Register as Labour</button>
+            <div class="role-login-link">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></div>
+        </div>
 
-    <input type="text" name="phone" class="form-control" placeholder="phone no" required>
+    </div>
 
-    <select name="role" required>
-        <option value="">Select Role</option>
-        <option value="contractor">Contractor</option>
-        <option value="labour">Labour</option>
-    </select>
+    <div class="form-section" id="registerForm">
 
-    <button type="submit">Register</button>
+        <div class="form-header">
+            <span class="form-badge" id="roleBadge"></span>
+            <h3 class="form-header-title">Fill in your details to create your account</h3>
+        </div>
 
-</form>
+        <form method="POST">
+            <input type="hidden" name="role" id="roleInput">
 
-<p>Already have an account?
-    <a href="{{ url_for('auth.login') }}">Login here</a>
-</p>
+            <div class="form-grid">
+
+                <div class="form-group full">
+                    <label class="form-label">Full Name</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="text" name="username" class="form-input" placeholder="Enter your full name" required>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">Email Address</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input type="email" name="email" class="form-input" placeholder="you@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group full">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" name="password" id="passwordInput" class="form-input" placeholder="Create a password" required>
+                        <i class="bi bi-eye eye-icon" id="togglePassword"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-geo-alt input-icon"></i>
+                        <input type="text" name="city" class="form-input" placeholder="Your city" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-telephone input-icon"></i>
+                        <input type="text" name="phone" class="form-input" placeholder="10-digit number" required>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="form-footer-row">
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="bi bi-person-check-fill"></i> Create Account
+                </button>
+                <div class="auth-footer">
+                    Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function selectRole(role) {
+        document.getElementById('card-contractor').classList.remove('active');
+        document.getElementById('card-labour').classList.remove('active');
+        document.getElementById('card-' + role).classList.add('active');
+        document.getElementById('roleInput').value = role;
+
+        const badge = document.getElementById('roleBadge');
+        const btn   = document.getElementById('submitBtn');
+
+        if (role === 'contractor') {
+            badge.className = 'form-badge badge-contractor';
+            badge.innerHTML = '<i class="bi bi-building"></i> Contractor';
+            btn.className   = 'submit-btn submit-contractor';
+        } else {
+            badge.className = 'form-badge badge-labour';
+            badge.innerHTML = '<i class="bi bi-person-workspace"></i> Labour';
+            btn.className   = 'submit-btn submit-labour';
+        }
+
+        const form = document.getElementById('registerForm');
+        form.classList.add('visible');
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const input = document.getElementById('passwordInput');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        this.className = `bi bi-eye${isPassword ? '-slash' : ''} eye-icon`;
+    });
+</script>
 {% endblock %}
