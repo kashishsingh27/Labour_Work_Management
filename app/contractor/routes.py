@@ -248,3 +248,31 @@ def rate_labour(job_id, labour_id):
         job_id=job_id,
         labour_id=labour_id
     )
+
+@contractor.route("/profile/<int:user_id>")
+@login_required
+def contractor_profile(user_id):
+    from sqlalchemy import func
+    contractor = User.query.get_or_404(user_id)
+    if contractor.role != "contractor":
+        flash("User is not a contractor.", "danger")
+        return redirect(url_for("auth.home"))
+    jobs = Job.query.filter_by(
+        contractor_id=contractor.id
+    ).order_by(Job.created_at.desc()).all()
+    ratings = Rating.query.filter_by(
+        contractor_id=contractor.id
+    ).order_by(Rating.created_at.desc()).all()
+    avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
+        contractor_id=contractor.id
+    ).scalar()
+    avg_rating = round(float(avg_rating), 1) if avg_rating else 0
+ 
+    return render_template(
+        "contractor_profile.html",
+        contractor=contractor,
+        jobs=jobs,
+        ratings=ratings,
+        avg_rating=avg_rating
+    )
+ 

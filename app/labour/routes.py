@@ -135,3 +135,41 @@ def job_detail(job_id):
     job = Job.query.get_or_404(job_id)
 
     return render_template("labour/job_details.html", job=job)
+
+
+@labour.route("/profile/<int:user_id>")
+@login_required
+def labour_profile(user_id):
+    labour_user = User.query.get_or_404(user_id)
+    if labour_user.role != "labour":
+        flash("User is not a labour worker.", "danger")
+        return redirect(url_for("auth.home"))
+    applications = Application.query.filter_by(
+        labour_id=labour_user.id
+    ).order_by(Application.id.desc()).all()
+    ratings = Rating.query.filter_by(
+        labour_id=labour_user.id
+    ).order_by(Rating.created_at.desc()).all()
+ 
+    # Average rating received
+    avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
+        labour_id=labour_user.id
+    ).scalar()
+    avg_rating = round(float(avg_rating), 1) if avg_rating else 0
+ 
+    # Jobs completed = applications with "Accepted" status
+    # TODO: When you add a proper "completed" status or JobCompletion model,
+    #       update this query to use that instead.
+    jobs_completed = Application.query.filter_by(
+        labour_id=labour_user.id,
+        status="Accepted"
+    ).count()
+ 
+    return render_template(
+        "labour_profile.html",
+        labour_user=labour_user,
+        applications=applications,
+        ratings=ratings,
+        avg_rating=avg_rating,
+        jobs_completed=jobs_completed
+    )

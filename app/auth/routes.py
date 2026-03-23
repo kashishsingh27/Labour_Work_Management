@@ -12,7 +12,12 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/")
 def home():
-    return redirect(url_for("auth.login"))
+    if current_user.is_authenticated:
+        if current_user.role == "contractor":
+            return redirect(url_for("contractor.contractor_dashboard"))
+        else:
+            return redirect(url_for("labour.labour_dashboard"))
+    return render_template("index.html")
 
 @auth.route("/register", methods=["GET", "POST"])
 def register():
@@ -85,6 +90,4 @@ def view_notifications():
         "notifications.html",
         notifications=notifications
     )
-
-
 

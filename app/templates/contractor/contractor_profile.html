@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+{% block title %}{{ contractor.username }} — Contractor Profile | LWMS{% endblock %}
+
+{% block head %}
+<style>
+    .profile-page {
+        background: var(--bg-primary);
+        min-height: 100vh;
+        padding-bottom: 4rem;
+    }
+
+    /* ====== HERO BANNER ====== */
+    .profile-banner {
+        height: 200px;
+        background: linear-gradient(135deg, #0d1b2e 0%, #1a2a45 50%, #0d1b2e 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    .banner-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+    }
+
+    .banner-orb-1 {
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%);
+        top: -100px; right: 10%;
+    }
+
+    .banner-orb-2 {
+        width: 250px; height: 250px;
+        background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+        bottom: -80px; left: 5%;
+    }
+
+    /* ====== AVATAR ====== */
+    .profile-avatar-wrap {
+        position: relative;
+        margin-top: -60px;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid var(--bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Syne', sans-serif;
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: white;
+        background: linear-gradient(135deg, #f59e0b, #f97316);
+        box-shadow: 0 8px 32px rgba(245,158,11,0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* If user uploads a photo later — TODO BACKEND: set src to user.profile_photo */
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        position: absolute;
+        top: 0; left: 0;
+    }
+
+    .avatar-badge {
+        position: absolute;
+        bottom: 4px; right: 4px;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--accent-2);
+        border: 3px solid var(--bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        color: white;
+    }
+
+    .role-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 14px;
+        background: rgba(245,158,11,0.15);
+        border: 1px solid rgba(245,158,11,0.3);
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--accent-2);
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-name {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .profile-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    /* ====== STATS ROW ====== */
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+        border-color: rgba(59,130,246,0.3);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .stat-card-value {
+        font-family: 'Syne', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+
+    .stat-card-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .stat-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        margin: 0 auto 0.75rem;
+    }
+
+    /* ====== SECTION CARDS ====== */
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .info-card-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info-row-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .info-row-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+
+    .info-row-value {
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    /* ====== JOB CARDS ====== */
+    .job-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 1.1rem;
+        background: var(--bg-secondary);
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .job-item:hover {
+        border-color: rgba(59,130,246,0.3);
+        transform: translateX(4px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .job-item-icon {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.1));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        color: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .job-item-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .job-item-meta {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .job-status-pill {
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .pill-active {
+        background: rgba(16,185,129,0.12);
+        color: var(--success);
+        border: 1px solid rgba(16,185,129,0.3);
+    }
+
+    /* ====== RATINGS ====== */
+    .stars-display {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+    }
+
+    .star-filled { color: #f59e0b; }
+    .star-empty { color: var(--border-color); }
+
+    .rating-item {
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.75rem;
+    }
+
+    .rating-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+
+    .rating-reviewer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mini-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), #60a5fa);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .rating-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .rating-date {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .rating-review-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        line-height: 1.6;
+    }
+
+    /* ====== EDIT BUTTON ====== */
+    .btn-edit-profile {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-glass);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-edit-profile:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    /* ====== PHOTO UPLOAD HINT ====== */
+    .photo-upload-hint {
+        position: absolute;
+        bottom: 0; right: 0;
+        width: 32px; height: 32px;
+        background: var(--accent);
+        border-radius: 50%;
+        border: 3px solid var(--bg-primary);
+        display: flex; align-items: center; justify-content: center;
+        color: white;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .photo-upload-hint:hover {
+        background: var(--accent-hover);
+        transform: scale(1.1);
+    }
+
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    .empty-state p {
+        font-size: 0.875rem;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+    <!-- ===== BANNER ===== -->
+    <div class="profile-banner">
+        <div class="banner-orb banner-orb-1"></div>
+        <div class="banner-orb banner-orb-2"></div>
+    </div>
+
+    <div class="container">
+
+        <!-- ===== PROFILE HEADER ===== -->
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4" style="margin-top: -20px;">
+
+            <div class="d-flex align-items-end gap-4">
+                <!-- Avatar -->
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar">
+                        {# TODO BACKEND: If contractor.profile_photo exists, show <img src="{{ contractor.profile_photo }}"> #}
+                        {{ contractor.username[0].upper() }}
+                    </div>
+                    <!-- TODO BACKEND: Wire this to a file upload endpoint for profile photo -->
+                    {% if current_user.id == contractor.id %}
+                        <div class="photo-upload-hint" title="Upload photo (coming soon)">
+                            <i class="bi bi-camera"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Name & meta -->
+                <div style="padding-bottom: 8px;">
+                    <div class="role-chip">
+                        <i class="bi bi-building"></i> Contractor
+                    </div>
+                    <div class="profile-name">{{ contractor.username }}</div>
+                    <div class="profile-meta">
+                        <span class="profile-meta-item">
+                            <i class="bi bi-envelope"></i> {{ contractor.email }}
+                        </span>
+                        {% if contractor.phone %}
+                            <span class="profile-meta-item">
+                                <i class="bi bi-telephone"></i> {{ contractor.phone }}
+                            </span>
+                        {% endif %}
+                        {% if contractor.city %}
+                            <span class="profile-meta-item">
+                                <i class="bi bi-geo-alt"></i> {{ contractor.city }}
+                            </span>
+                        {% endif %}
+                        <span class="profile-meta-item">
+                            <i class="bi bi-calendar3"></i> Member since {{ contractor.created_at.strftime('%b %Y') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit button (only shown to profile owner) -->
+            {% if current_user.id == contractor.id %}
+                {# TODO BACKEND: Create edit_profile route for contractor #}
+                <a href="#" class="btn-edit-profile">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- ===== STATS ROW ===== -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(59,130,246,0.12); color:var(--accent);">
+                        <i class="bi bi-briefcase-fill"></i>
+                    </div>
+                    <!-- TODO BACKEND: Pass jobs_posted count from route -->
+                    <div class="stat-card-value">{{ jobs_posted }}</div>
+                    <div class="stat-card-label">Jobs Posted</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(245,158,11,0.12); color:var(--accent-2);">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <!-- TODO BACKEND: Pass applications_received count from route -->
+                    <div class="stat-card-value">{{ applications_received }}</div>
+                    <div class="stat-card-label">Applications</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success);">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <!-- TODO BACKEND: Pass ratings_given count from route -->
+                    <div class="stat-card-value">{{ ratings_given }}</div>
+                    <div class="stat-card-label">Workers Rated</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(167,139,250,0.12); color:#a78bfa;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <!-- TODO BACKEND: Pass accepted_applications count (Application.status == 'Accepted') from route -->
+                    <div class="stat-card-value">{{ accepted_applications if accepted_applications is defined else '—' }}</div>
+                    <div class="stat-card-label">Hires Made</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="row g-4">
+
+            <!-- LEFT COLUMN: Info + Recent Jobs -->
+            <div class="col-lg-8">
+
+                <!-- Recent Jobs Posted -->
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="bi bi-briefcase" style="color:var(--accent);"></i>
+                        Jobs Posted
+                    </div>
+
+                    <!-- TODO BACKEND: Loop over contractor's jobs (pass `jobs` list from route) -->
+                    {% if jobs_list %}
+                        {% for job in jobs_list %}
+                            <a href="{{ url_for('labour.job_detail', job_id=job.id) }}" class="job-item" style="display:flex;">
+                                <div class="job-item-icon">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div class="job-item-title">{{ job.title }}</div>
+                                    <div class="job-item-meta">
+                                        <span><i class="bi bi-geo-alt"></i> {{ job.city }}{% if job.locality %}, {{ job.locality }}{% endif %}</span>
+                                        <span><i class="bi bi-cash"></i> ₹{{ job.wage }}/day</span>
+                                        <span><i class="bi bi-tools"></i> {{ job.work_type }}</span>
+                                        <span><i class="bi bi-calendar3"></i> {{ job.created_at.strftime('%d %b %Y') }}</span>
+                                    </div>
+                                </div>
+                                <span class="job-status-pill pill-active align-self-center">Active</span>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="bi bi-briefcase"></i>
+                            <p>No jobs posted yet.</p>
+                        </div>
+                    {% endif %}
+
+                    {% if current_user.id == contractor.id %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('contractor.post_job') }}" class="btn-primary-lwms btn d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-plus-circle"></i> Post New Job
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Ratings given by this contractor to workers -->
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="bi bi-star" style="color:var(--accent-2);"></i>
+                        Ratings Given to Workers
+                    </div>
+
+                    <!-- TODO BACKEND: Pass `ratings_list` (Rating.query.filter_by(contractor_id=contractor.id).all()) from route -->
+                    {% if ratings_list %}
+                        {% for r in ratings_list %}
+                            <div class="rating-item">
+                                <div class="rating-header">
+                                    <div class="rating-reviewer">
+                                        <div class="mini-avatar">{{ r.labour.username[0].upper() }}</div>
+                                        <div>
+                                            <div class="rating-name">{{ r.labour.username }}</div>
+                                            <div class="rating-date">{{ r.created_at.strftime('%d %b %Y') }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="stars-display">
+                                        {% for i in range(1, 6) %}
+                                            <i class="bi bi-star-fill {% if i <= r.rating %}star-filled{% else %}star-empty{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% if r.review %}
+                                    <div class="rating-review-text">{{ r.review }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="bi bi-star"></i>
+                            <p>No ratings given yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Contact Info -->
+            <div class="col-lg-4">
+                <div class="info-card">
+                    <div class="info-card-title">
+                        <i class="bi bi-person-vcard" style="color:var(--accent);"></i>
+                        Contact Information
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-row-icon"><i class="bi bi-person"></i></div>
+                        <div>
+                            <div class="info-row-label">Full Name</div>
+                            <div class="info-row-value">{{ contractor.username }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-row-icon"><i class="bi bi-envelope"></i></div>
+                        <div>
+                            <div class="info-row-label">Email</div>
+                            <div class="info-row-value">{{ contractor.email }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-row-icon"><i class="bi bi-telephone"></i></div>
+                        <div>
+                            <div class="info-row-label">Phone</div>
+                            <!-- TODO BACKEND: Only show phone to authenticated users if you want privacy control -->
+                            <div class="info-row-value">{{ contractor.phone if contractor.phone else '—' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-row-icon"><i class="bi bi-geo-alt"></i></div>
+                        <div>
+                            <div class="info-row-label">City</div>
+                            <div class="info-row-value">{{ contractor.city if contractor.city else '—' }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-row-icon"><i class="bi bi-calendar3"></i></div>
+                        <div>
+                            <div class="info-row-label">Member Since</div>
+                            <div class="info-row-value">{{ contractor.created_at.strftime('%B %Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions (only for profile owner) -->
+                {% if current_user.id == contractor.id %}
+                    <div class="info-card">
+                        <div class="info-card-title">
+                            <i class="bi bi-lightning" style="color:var(--accent-2);"></i>
+                            Quick Actions
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('contractor.post_job') }}" class="btn-primary-lwms btn d-flex align-items-center gap-2 justify-content-center">
+                                <i class="bi bi-plus-circle"></i> Post a Job
+                            </a>
+                            <a href="{{ url_for('contractor.view_applications') }}" class="btn btn-outline-secondary rounded-3 d-flex align-items-center gap-2 justify-content-center" style="font-size:0.875rem; font-weight:600;">
+                                <i class="bi bi-people"></i> View Applications
+                            </a>
+                            <a href="{{ url_for('auth.view_notifications') }}" class="btn btn-outline-secondary rounded-3 d-flex align-items-center gap-2 justify-content-center" style="font-size:0.875rem; font-weight:600;">
+                                <i class="bi bi-bell"></i> Notifications
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

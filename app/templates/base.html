@@ -1,177 +1,808 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LWMS{% endblock %}</title>
 
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
     <style>
-       body{
-    margin:0;
-    font-family: 'Poppins', sans-serif;
-    height:100vh;
-    background: url("/static/construction.jpg") no-repeat center center/cover;
-}
+        /* ============================================================
+           CSS VARIABLES — Light & Dark Theme
+        ============================================================ */
+        :root[data-theme="light"] {
+            --bg-primary:        #f0f4f8;
+            --bg-secondary:      #ffffff;
+            --bg-card:           #ffffff;
+            --bg-navbar:         #ffffff;
+            --text-primary:      #1a1f36;
+            --text-secondary:    #5a6278;
+            --text-muted:        #8a92a6;
+            --border-color:      #e2e8f0;
+            --accent:            #2563eb;
+            --accent-hover:      #1d4ed8;
+            --accent-light:      #eff6ff;
+            --success:           #16a34a;
+            --warning:           #d97706;
+            --danger:            #dc2626;
+            --shadow-sm:         0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md:         0 4px 16px rgba(0,0,0,0.10);
+            --shadow-lg:         0 8px 32px rgba(0,0,0,0.12);
+            --navbar-border:     #e2e8f0;
+            --badge-bg:          #ef4444;
+            --input-bg:          #f8fafc;
+            --overlay-bg:        rgba(0,0,0,0.45);
+        }
 
-/* overlay */
+        :root[data-theme="dark"] {
+            --bg-primary:        #0f1117;
+            --bg-secondary:      #1a1d2e;
+            --bg-card:           #1e2235;
+            --bg-navbar:         #161827;
+            --text-primary:      #e8eaf6;
+            --text-secondary:    #9ca3c8;
+            --text-muted:        #6b7299;
+            --border-color:      #2a2f4a;
+            --accent:            #3b82f6;
+            --accent-hover:      #60a5fa;
+            --accent-light:      #1e3a5f;
+            --success:           #22c55e;
+            --warning:           #f59e0b;
+            --danger:            #f87171;
+            --shadow-sm:         0 1px 3px rgba(0,0,0,0.3);
+            --shadow-md:         0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg:         0 8px 32px rgba(0,0,0,0.5);
+            --navbar-border:     #2a2f4a;
+            --badge-bg:          #ef4444;
+            --input-bg:          #252840;
+            --overlay-bg:        rgba(0,0,0,0.65);
+        }
 
-.overlay{
-    min-height:100vh;
-    width:100%;
+        /* ============================================================
+           GLOBAL RESET & BASE
+        ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; }
 
-    background: linear-gradient(
-        rgba(0,0,0,0.5),
-        rgba(0,0,0,0.6)
-    );
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+        }
 
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
-/* glass card */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-primary);
+        }
 
-.login-card{
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
 
-    width: 550px;
-    padding:50px;;
-    
-    background: rgba(255,255,255,0.15);
+        /* ============================================================
+           NAVBAR
+        ============================================================ */
+        .lwms-navbar {
+            background: var(--bg-navbar);
+            border-bottom: 1px solid var(--navbar-border);
+            box-shadow: var(--shadow-sm);
+            padding: 0 1.5rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
 
-    backdrop-filter: blur(15px);
+        .navbar-brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
 
-    border-radius:20px;
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            flex-shrink: 0;
+        }
 
-    box-shadow:
-        0 10px 40px rgba(0,0,0,0.5);
+        .brand-text {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
 
-    color:white;
-}
-/* title */
+        .brand-sub {
+            font-size: 0.6rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            display: block;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
 
-.login-card h2{
-    text-align:center;
-    margin-bottom:20px;
-    font-size:36px;
-    font-weight:bold;
-}
-/* labels */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+        }
 
-label{
-    display:block;
-    margin-top:15px;
-}
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            position: relative;
+        }
 
-/* input */
+        .nav-link-item:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
 
-input{
-    width:95%;
-    padding:14px;
+        .nav-link-item.active {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
 
-    border:none;
-    border-radius:12px;
+        /* Notification badge */
+        .notif-badge {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            background: var(--badge-bg);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+        }
 
-    font-size:16px;
-}
+        /* Theme toggle button */
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
 
-/* button */
+        .theme-toggle:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
 
-button{
+        /* Divider in nav */
+        .nav-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-color);
+            margin: 0 6px;
+        }
 
-    width:100%;
-    padding:14px;
+        /* Profile avatar in navbar */
+        .nav-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: 'Poppins', sans-serif;
+            flex-shrink: 0;
+        }
 
-    border:none;
-    border-radius:12px;
+        /* Logout button style */
+        .nav-logout {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--danger);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
 
-    font-size:16px;
-    font-weight:600;
+        .nav-logout:hover {
+            background: #fef2f2;
+            color: var(--danger);
+        }
 
-    background: linear-gradient(
-        45deg,
-        #0d6efd,
-        #00c6ff
-    );
+        [data-theme="dark"] .nav-logout:hover {
+            background: rgba(248,113,113,0.1);
+        }
 
-    color:white;
-    margin-top:20px; 
-}
+        /* Hamburger for mobile */
+        .nav-hamburger {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-left: 8px;
+        }
 
-button:hover{
-    opacity:0.9;
-}
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: var(--bg-navbar);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            z-index: 999;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: var(--shadow-md);
+        }
 
-/* register */
+        .mobile-menu.open { display: flex; }
 
-.register-link{
-    text-align:center;
-    margin-top:15px;
-}
+        .mobile-menu .nav-link-item,
+        .mobile-menu .nav-logout {
+            width: 100%;
+        }
 
-.title{
+        /* ============================================================
+           FLASH MESSAGES
+        ============================================================ */
+        .flash-container {
+            padding: 12px 24px 0;
+        }
 
-    margin-top:30px;
+        .flash-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            animation: slideDown 0.3s ease;
+        }
 
-    color:white;
-    font-size:0px;
-    font-weight:800;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
 
-    text-align:center;
+        .flash-success {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
 
-    text-shadow:2px 2px 10px rgba(0,0,0,0.6);
-}
+        .flash-danger {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
 
-.subtitle{
-    font-size:25px;
-    font-weight:600;
-}
+        .flash-warning {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        [data-theme="dark"] .flash-success {
+            background: rgba(22,163,74,0.15);
+            border-color: rgba(22,163,74,0.3);
+            color: #4ade80;
+        }
+
+        [data-theme="dark"] .flash-danger {
+            background: rgba(220,38,38,0.15);
+            border-color: rgba(220,38,38,0.3);
+            color: #f87171;
+        }
+
+        [data-theme="dark"] .flash-warning {
+            background: rgba(217,119,6,0.15);
+            border-color: rgba(217,119,6,0.3);
+            color: #fbbf24;
+        }
+
+        .flash-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            opacity: 0.5;
+            color: inherit;
+            padding: 0;
+        }
+
+        .flash-close:hover { opacity: 1; }
+
+        /* ============================================================
+           MAIN CONTENT WRAPPER
+        ============================================================ */
+        .main-content {
+            padding: 28px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ============================================================
+           REUSABLE CARD COMPONENT
+        ============================================================ */
+        .lwms-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .lwms-card:hover { box-shadow: var(--shadow-md); }
+
+        /* ============================================================
+           STAT CARDS
+        ============================================================ */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue   { background: #eff6ff; color: #2563eb; }
+        .stat-icon.green  { background: #f0fdf4; color: #16a34a; }
+        .stat-icon.orange { background: #fff7ed; color: #ea580c; }
+        .stat-icon.purple { background: #faf5ff; color: #9333ea; }
+
+        [data-theme="dark"] .stat-icon.blue   { background: rgba(37,99,235,0.15); }
+        [data-theme="dark"] .stat-icon.green  { background: rgba(22,163,74,0.15); }
+        [data-theme="dark"] .stat-icon.orange { background: rgba(234,88,12,0.15); }
+        [data-theme="dark"] .stat-icon.purple { background: rgba(147,51,234,0.15); }
+
+        .stat-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .btn-lwms-primary {
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-lwms-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            color: white;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+        }
+
+        .btn-lwms-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 1.5px solid var(--accent);
+            border-radius: 10px;
+            padding: 9px 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-lwms-outline:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* ============================================================
+           FORM INPUTS
+        ============================================================ */
+        .lwms-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+
+        .lwms-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        }
+
+        .lwms-input::placeholder { color: var(--text-muted); }
+
+        /* ============================================================
+           BADGE / STATUS PILLS
+        ============================================================ */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-pending  { background: #fffbeb; color: #d97706; }
+        .status-accepted { background: #f0fdf4; color: #16a34a; }
+        .status-rejected { background: #fef2f2; color: #dc2626; }
+
+        [data-theme="dark"] .status-pending  { background: rgba(217,119,6,0.15); }
+        [data-theme="dark"] .status-accepted { background: rgba(22,163,74,0.15); }
+        [data-theme="dark"] .status-rejected { background: rgba(220,38,38,0.15); }
+
+        /* ============================================================
+           PAGE HEADER
+        ============================================================ */
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            margin: 4px 0 0;
+            font-size: 0.9rem;
+        }
+
+        /* ============================================================
+           STAR RATING DISPLAY
+        ============================================================ */
+        .star-rating {
+            display: inline-flex;
+            gap: 2px;
+            color: #f59e0b;
+            font-size: 0.95rem;
+        }
+
+        /* ============================================================
+           AVATAR (placeholder for no profile photo)
+        ============================================================ */
+        .user-avatar {
+            border-radius: 50%;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            flex-shrink: 0;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .nav-hamburger { display: flex; }
+            .main-content { padding: 16px; }
+        }
     </style>
 
     {% block head %}{% endblock %}
 </head>
 <body>
 
-   {% if current_user.is_authenticated %}
+    <!-- ================================================================
+         NAVBAR
+    ================================================================ -->
+    <nav class="lwms-navbar">
 
-    <div class="navbar">
-
-        {% if current_user.role == "contractor" %}
-            <a href="{{ url_for('contractor.contractor_dashboard') }}">Dashboard</a>
-        {% elif current_user.role == "labour" %}
-            <a href="{{ url_for('labour.labour_dashboard') }}">Dashboard</a>
-        {% endif %}
-
-        <a href="{{ url_for('auth.view_notifications') }}">
-            Notifications
-            {% set unread = current_user.notifications
-                |selectattr("is_read", "equalto", False)
-                |list
-                |length %}
-            {% if unread > 0 %}
-                <span class="badge">{{ unread }}</span>
-            {% endif %}
+        <!-- Brand -->
+        <a href="{{ url_for('auth.home') }}" class="navbar-brand-wrap">
+            <div class="brand-icon"><i class="bi bi-building-gear"></i></div>
+            <div class="brand-text">
+                LWMS
+                <span class="brand-sub">Labour Work Management</span>
+            </div>
         </a>
 
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        <!-- Desktop Nav Links -->
+        <div class="nav-links">
 
+            {% if current_user.is_authenticated %}
+
+                <!-- Dashboard -->
+                {% if current_user.role == "contractor" %}
+                    <a href="{{ url_for('contractor.contractor_dashboard') }}" class="nav-link-item">
+                        <i class="bi bi-grid-1x2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('contractor.post_job') }}" class="nav-link-item">
+                        <i class="bi bi-plus-circle"></i> Post Job
+                    </a>
+                    <a href="{{ url_for('contractor.view_applications') }}" class="nav-link-item">
+                        <i class="bi bi-file-earmark-person"></i> Applications
+                    </a>
+                    <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}" class="nav-link-item">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
+                {% elif current_user.role == "labour" %}
+                    <a href="{{ url_for('labour.labour_dashboard') }}" class="nav-link-item">
+                        <i class="bi bi-grid-1x2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('labour.view_jobs') }}" class="nav-link-item">
+                        <i class="bi bi-briefcase"></i> Browse Jobs
+                    </a>
+                    <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" class="nav-link-item">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
+                {% endif %}
+
+                <div class="nav-divider"></div>
+
+                <!-- Notifications -->
+                <a href="{{ url_for('auth.view_notifications') }}" class="nav-link-item" style="position:relative;">
+                    <i class="bi bi-bell"></i>
+                    {% set unread = current_user.notifications
+                        |selectattr("is_read","equalto",False)|list|length %}
+                    {% if unread > 0 %}
+                        <span class="notif-badge">{{ unread }}</span>
+                    {% endif %}
+                </a>
+
+                <!-- User avatar -->
+                <div class="nav-avatar" title="{{ current_user.username }}">
+                    {{ current_user.username[0].upper() }}
+                </div>
+
+                <div class="nav-divider"></div>
+
+                <!-- Logout -->
+                <a href="{{ url_for('auth.logout') }}" class="nav-logout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+
+            {% else %}
+                <!-- Guest links -->
+                <a href="{{ url_for('auth.login') }}" class="nav-link-item">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn-lwms-primary" style="padding:8px 18px;">
+                    <i class="bi bi-person-plus"></i> Register
+                </a>
+            {% endif %}
+
+            <div class="nav-divider"></div>
+
+            <!-- Dark / Light Mode Toggle -->
+            <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+                <i class="bi bi-moon-stars" id="themeIcon"></i>
+            </button>
+
+        </div>
+
+        <!-- Mobile: theme toggle always visible + hamburger -->
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;" class="d-md-none">
+            <button class="theme-toggle" id="themeToggleMobile" title="Toggle dark/light mode">
+                <i class="bi bi-moon-stars" id="themeIconMobile"></i>
+            </button>
+            <button class="nav-hamburger" id="hamburger">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        {% if current_user.is_authenticated %}
+            {% if current_user.role == "contractor" %}
+                <a href="{{ url_for('contractor.contractor_dashboard') }}" class="nav-link-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                <a href="{{ url_for('contractor.post_job') }}" class="nav-link-item"><i class="bi bi-plus-circle"></i> Post Job</a>
+                <a href="{{ url_for('contractor.view_applications') }}" class="nav-link-item"><i class="bi bi-file-earmark-person"></i> Applications</a>
+                <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> Profile</a>
+            {% elif current_user.role == "labour" %}
+                <a href="{{ url_for('labour.labour_dashboard') }}" class="nav-link-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                <a href="{{ url_for('labour.view_jobs') }}" class="nav-link-item"><i class="bi bi-briefcase"></i> Browse Jobs</a>
+                <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> Profile</a>
+            {% endif %}
+            <a href="{{ url_for('auth.view_notifications') }}" class="nav-link-item"><i class="bi bi-bell"></i> Notifications</a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}" class="nav-link-item"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+            <a href="{{ url_for('auth.register') }}" class="nav-link-item"><i class="bi bi-person-plus"></i> Register</a>
+        {% endif %}
     </div>
 
-{% endif %}
-    <div class="container">
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
+    <!-- ================================================================
+         FLASH MESSAGES
+    ================================================================ -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
                 {% for category, message in messages %}
-                    <div class="flash {{ category }}">
+                    <div class="flash-msg flash-{{ category }}">
+                        {% if category == 'success' %}<i class="bi bi-check-circle-fill"></i>
+                        {% elif category == 'danger' %}<i class="bi bi-x-circle-fill"></i>
+                        {% else %}<i class="bi bi-exclamation-triangle-fill"></i>{% endif %}
                         {{ message }}
+                        <button class="flash-close" onclick="this.parentElement.remove()">
+                            <i class="bi bi-x"></i>
+                        </button>
                     </div>
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
+    <!-- ================================================================
+         MAIN CONTENT
+    ================================================================ -->
+    <div class="main-content">
         {% block content %}{% endblock %}
-
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        /* ============================================================
+           DARK / LIGHT MODE TOGGLE
+           Persists choice in localStorage
+        ============================================================ */
+        const html = document.documentElement;
+        const STORAGE_KEY = 'lwms-theme';
+
+        function applyTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(STORAGE_KEY, theme);
+
+            const isDark = theme === 'dark';
+            const iconClass = isDark ? 'bi-sun' : 'bi-moon-stars';
+
+            document.querySelectorAll('#themeIcon, #themeIconMobile').forEach(el => {
+                el.className = `bi ${iconClass}`;
+            });
+        }
+
+        // Load saved theme on page load
+        const saved = localStorage.getItem(STORAGE_KEY) || 'light';
+        applyTheme(saved);
+
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        document.getElementById('themeToggleMobile')?.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        /* ============================================================
+           MOBILE HAMBURGER MENU
+        ============================================================ */
+        document.getElementById('hamburger')?.addEventListener('click', () => {
+            document.getElementById('mobileMenu').classList.toggle('open');
+        });
+
+        /* ============================================================
+           AUTO-DISMISS FLASH MESSAGES after 5s
+        ============================================================ */
+        setTimeout(() => {
+            document.querySelectorAll('.flash-msg').forEach(el => {
+                el.style.transition = 'opacity 0.4s';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 400);
+            });
+        }, 5000);
+    </script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>
