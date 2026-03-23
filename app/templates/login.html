@@ -1,43 +1,409 @@
 {% extends "base.html" %}
+{% block title %}Login — LWMS{% endblock %}
+
+{% block head %}
+<style>
+    .main-content { padding: 0 !important; max-width: 100% !important; }
+
+    .auth-wrapper {
+        min-height: calc(100vh - 64px);
+        background: linear-gradient(160deg, #eef4ff 0%, #f0f9ff 50%, #e8f4fd 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 56px 32px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-theme="dark"] .auth-wrapper {
+        background: linear-gradient(160deg, #0d1117 0%, #0f1624 50%, #0a1628 100%);
+    }
+
+    /* Blobs */
+    .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(72px);
+        opacity: 0.22;
+        animation: floatBlob 9s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    [data-theme="dark"] .bg-blob { opacity: 0.10; }
+
+    .blob-1 { width: 480px; height: 480px; background: radial-gradient(circle, #93c5fd, #3b82f6); top: -140px; left: -120px; animation-delay: 0s; }
+    .blob-2 { width: 360px; height: 360px; background: radial-gradient(circle, #6ee7b7, #059669); bottom: -100px; right: -80px; animation-delay: 3s; }
+    .blob-3 { width: 260px; height: 260px; background: radial-gradient(circle, #bfdbfe, #60a5fa); top: 40%; right: 8%; animation-delay: 5.5s; }
+    .blob-4 { width: 200px; height: 200px; background: radial-gradient(circle, #a7f3d0, #34d399); top: 15%; left: 12%; animation-delay: 2s; }
+
+    @keyframes floatBlob {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50%       { transform: translateY(-28px) scale(1.04); }
+    }
+
+    /* Split layout */
+    .login-split {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        max-width: 960px;
+        background: rgba(255,255,255,0.78);
+        border: 1.5px solid rgba(200,220,255,0.7);
+        border-radius: 24px;
+        box-shadow: 0 8px 40px rgba(37,99,235,0.09);
+        backdrop-filter: blur(16px);
+        overflow: hidden;
+        animation: fadeInUp 0.5s ease both;
+    }
+
+    [data-theme="dark"] .login-split {
+        background: rgba(22,26,42,0.80);
+        border-color: rgba(59,130,246,0.18);
+        box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Left — branding */
+    .login-panel {
+        background: linear-gradient(145deg, #1e3a8a, #2563eb, #0891b2);
+        padding: 60px 52px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-panel::before {
+        content: '';
+        position: absolute;
+        top: -80px; right: -80px;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+    }
+
+    .login-panel::after {
+        content: '';
+        position: absolute;
+        bottom: -60px; left: -50px;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+    }
+
+    .panel-grid {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 26px 26px;
+    }
+
+    .panel-content { position: relative; z-index: 1; }
+
+    .panel-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 48px;
+    }
+
+    .panel-logo-icon {
+        width: 44px; height: 44px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; color: white;
+    }
+
+    .panel-logo-text {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: white;
+        line-height: 1.1;
+    }
+
+    .panel-logo-sub {
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.6);
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .panel-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.9rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1.2;
+        margin-bottom: 14px;
+    }
+
+    .panel-sub {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.7);
+        line-height: 1.7;
+        margin-bottom: 40px;
+    }
+
+    .panel-features {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .panel-feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+    }
+
+    .panel-feature-icon {
+        width: 32px; height: 32px;
+        background: rgba(255,255,255,0.12);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    /* Right — form */
+    .login-form-side {
+        padding: 60px 52px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .auth-header { margin-bottom: 32px; }
+
+    .auth-header h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+    }
+
+    .auth-header p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .form-input {
+        width: 100%;
+        background: rgba(248,251,255,0.9);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 14px 12px 38px;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    [data-theme="dark"] .form-input { background: rgba(15,17,23,0.5); }
+
+    .form-input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    .form-input::placeholder { color: var(--text-muted); }
+
+    .input-icon {
+        position: absolute;
+        left: 13px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .eye-icon {
+        position: absolute;
+        right: 13px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .submit-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .auth-footer a { color: #2563eb; font-weight: 600; }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+        .login-split { grid-template-columns: 1fr; }
+        .login-panel { display: none; }
+        .login-form-side { padding: 40px 28px; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="auth-wrapper">
 
-<div class="overlay">
+    <!-- Blobs -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+    <div class="bg-blob blob-4"></div>
 
-    <div class="title">
-        LABOUR WORK MANAGEMENT SYSTEM
-        <div class="subtitle">
-            SMART CONSTRUCTION MANAGEMENT PLATFORM
+    <div class="login-split">
+
+        <!-- Left branding panel -->
+        <div class="login-panel">
+            <div class="panel-grid"></div>
+            <div class="panel-content">
+
+                <div class="panel-logo">
+                    <div class="panel-logo-icon"><i class="bi bi-building-gear"></i></div>
+                    <div class="panel-logo-text">
+                        LWMS
+                        <span class="panel-logo-sub">Labour Work Management</span>
+                    </div>
+                </div>
+
+                <div class="panel-title">Welcome<br>back.</div>
+                <p class="panel-sub">
+                    Log in to manage your jobs, applications
+                    and workforce all from one dashboard.
+                </p>
+
+                <div class="panel-features">
+                    <div class="panel-feature">
+                        <div class="panel-feature-icon"><i class="bi bi-briefcase-fill"></i></div>
+                        Post jobs &amp; hire workers instantly
+                    </div>
+                    <div class="panel-feature">
+                        <div class="panel-feature-icon"><i class="bi bi-bell-fill"></i></div>
+                        Real-time notifications
+                    </div>
+                    <div class="panel-feature">
+                        <div class="panel-feature-icon"><i class="bi bi-star-fill"></i></div>
+                        Ratings &amp; trusted reviews
+                    </div>
+                    <div class="panel-feature">
+                        <div class="panel-feature-icon"><i class="bi bi-shield-check-fill"></i></div>
+                        Secure role-based access
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
 
-    <div class="center-box">
+        <!-- Right form -->
+        <div class="login-form-side">
 
-        <div class="login-card">
-
-            <h2>Login</h2>
+            <div class="auth-header">
+                <h2>Sign In</h2>
+                <p>Enter your credentials to access your account</p>
+            </div>
 
             <form method="POST">
 
-                <label>Email</label>
-                <input type="email" name="email">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input type="email" name="email" class="form-input"
+                               placeholder="you@example.com" required>
+                    </div>
+                </div>
 
-                <label>Password</label>
-                <input type="password" name="password">
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" name="password" id="passwordInput"
+                               class="form-input" placeholder="Enter your password" required>
+                        <i class="bi bi-eye eye-icon" id="togglePassword"></i>
+                    </div>
+                </div>
 
-                <button type="submit">Login</button>
+                <button type="submit" class="submit-btn">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </button>
 
             </form>
 
-            <div class="register-link">
+            <div class="auth-footer">
                 Don't have an account?
-                <a href="{{ url_for('auth.register') }}">Register</a>
+                <a href="{{ url_for('auth.register') }}">Register here</a>
             </div>
 
         </div>
-
     </div>
 
 </div>
+{% endblock %}
 
+{% block scripts %}
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const input = document.getElementById('passwordInput');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        this.className = `bi bi-eye${isPassword ? '-slash' : ''} eye-icon`;
+    });
+</script>
 {% endblock %}

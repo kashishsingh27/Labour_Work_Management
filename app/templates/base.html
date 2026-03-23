@@ -604,7 +604,11 @@
     <nav class="lwms-navbar">
 
         <!-- Brand -->
-        <a href="{{ url_for('auth.home') }}" class="navbar-brand-wrap">
+        <a href="{% if current_user.is_authenticated %}
+                    {% if current_user.role == 'contractor' %}{{ url_for('contractor.contractor_dashboard') }}
+                    {% else %}{{ url_for('labour.labour_dashboard') }}{% endif %}
+                 {% else %}{{ url_for('auth.home') }}{% endif %}"
+           class="navbar-brand-wrap">
             <div class="brand-icon"><i class="bi bi-building-gear"></i></div>
             <div class="brand-text">
                 LWMS
@@ -628,18 +632,12 @@
                     <a href="{{ url_for('contractor.view_applications') }}" class="nav-link-item">
                         <i class="bi bi-file-earmark-person"></i> Applications
                     </a>
-                    <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}" class="nav-link-item">
-                        <i class="bi bi-person-circle"></i> Profile
-                    </a>
                 {% elif current_user.role == "labour" %}
                     <a href="{{ url_for('labour.labour_dashboard') }}" class="nav-link-item">
                         <i class="bi bi-grid-1x2"></i> Dashboard
                     </a>
                     <a href="{{ url_for('labour.view_jobs') }}" class="nav-link-item">
                         <i class="bi bi-briefcase"></i> Browse Jobs
-                    </a>
-                    <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" class="nav-link-item">
-                        <i class="bi bi-person-circle"></i> Profile
                     </a>
                 {% endif %}
 
@@ -655,10 +653,18 @@
                     {% endif %}
                 </a>
 
-                <!-- User avatar -->
-                <div class="nav-avatar" title="{{ current_user.username }}">
-                    {{ current_user.username[0].upper() }}
-                </div>
+                <!-- Avatar IS the profile entry point -->
+                {% if current_user.role == "contractor" %}
+                    <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}"
+                       class="nav-avatar" title="View Profile">
+                        {{ current_user.username[0].upper() }}
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}"
+                       class="nav-avatar" title="View Profile">
+                        {{ current_user.username[0].upper() }}
+                    </a>
+                {% endif %}
 
                 <div class="nav-divider"></div>
 
@@ -705,11 +711,11 @@
                 <a href="{{ url_for('contractor.contractor_dashboard') }}" class="nav-link-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
                 <a href="{{ url_for('contractor.post_job') }}" class="nav-link-item"><i class="bi bi-plus-circle"></i> Post Job</a>
                 <a href="{{ url_for('contractor.view_applications') }}" class="nav-link-item"><i class="bi bi-file-earmark-person"></i> Applications</a>
-                <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> Profile</a>
+                <a href="{{ url_for('contractor.contractor_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> My Profile</a>
             {% elif current_user.role == "labour" %}
                 <a href="{{ url_for('labour.labour_dashboard') }}" class="nav-link-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
                 <a href="{{ url_for('labour.view_jobs') }}" class="nav-link-item"><i class="bi bi-briefcase"></i> Browse Jobs</a>
-                <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> Profile</a>
+                <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" class="nav-link-item"><i class="bi bi-person-circle"></i> My Profile</a>
             {% endif %}
             <a href="{{ url_for('auth.view_notifications') }}" class="nav-link-item"><i class="bi bi-bell"></i> Notifications</a>
             <a href="{{ url_for('auth.logout') }}" class="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
