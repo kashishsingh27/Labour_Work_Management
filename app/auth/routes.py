@@ -85,9 +85,15 @@ def view_notifications():
         n.is_read = True
 
     db.session.commit()
+    unread_count = sum(1 for n in notifications if not n.is_read)
+    accepted_count = sum(1 for n in notifications if 'accepted' in n.message.lower())
+    rejected_count = sum(1 for n in notifications if 'rejected' in n.message.lower())
 
     return render_template(
         "notifications.html",
-        notifications=notifications
+        notifications=notifications,
+        unread_count=unread_count,
+        accepted_count=accepted_count,
+        rejected_count=rejected_count
     )
 

@@ -1,21 +1,465 @@
 {% extends "base.html" %}
+{% block title %}Notifications — LWMS{% endblock %}
 
-{% block title %}Notifications{% endblock %}
+{% block head %}
+<style>
+    /* Two column layout */
+    .notif-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 32px;
+        align-items: start;
+    }
+
+    /* ── LEFT SIDE ── */
+    .notif-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .notif-page-header h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .notif-count-badge {
+        background: var(--accent-light);
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .notif-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .notif-item {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .notif-item:hover {
+        border-color: var(--accent);
+        box-shadow: var(--shadow-md);
+        transform: translateX(4px);
+    }
+
+    .notif-item.unread::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #2563eb, #0ea5e9);
+        border-radius: 4px 0 0 4px;
+    }
+
+    .notif-icon-wrap {
+        width: 42px; height: 42px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .notif-icon-wrap.blue   { background: var(--accent-light); color: var(--accent); }
+    .notif-icon-wrap.green  { background: #f0fdf4; color: #16a34a; }
+    .notif-icon-wrap.orange { background: #fff7ed; color: #ea580c; }
+
+    [data-theme="dark"] .notif-icon-wrap.green  { background: rgba(22,163,74,0.15); }
+    [data-theme="dark"] .notif-icon-wrap.orange { background: rgba(234,88,12,0.15); }
+
+    .notif-body { flex: 1; min-width: 0; }
+
+    .notif-message {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        line-height: 1.4;
+    }
+
+    .notif-item.unread .notif-message { font-weight: 600; }
+
+    .notif-meta {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .notif-unread-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .notif-arrow {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+    }
+
+    .notif-item:hover .notif-arrow {
+        transform: translateX(4px);
+        color: var(--accent);
+    }
+
+    /* Empty state */
+    .notif-empty {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 16px;
+        padding: 60px 40px;
+        text-align: center;
+    }
+
+    .notif-empty-icon {
+        font-size: 3rem;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 16px;
+    }
+
+    .notif-empty h3 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    .notif-empty p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    /* ── RIGHT SIDE — decorative panel ── */
+    .notif-side-panel {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .notif-illustration-card {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 18px;
+        padding: 28px 24px;
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Faint background glow */
+    .notif-illustration-card::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(37,99,235,0.08), transparent);
+        pointer-events: none;
+    }
+
+    .notif-illustration-card::after {
+        content: '';
+        position: absolute;
+        bottom: -30px; left: -30px;
+        width: 140px; height: 140px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(14,165,233,0.07), transparent);
+        pointer-events: none;
+    }
+
+    .notif-svg-wrap {
+        position: relative;
+        z-index: 1;
+        margin-bottom: 16px;
+    }
+
+    .notif-panel-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .notif-panel-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Summary card */
+    .notif-summary-card {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px 22px;
+    }
+
+    .notif-summary-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+    }
+
+    .notif-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.83rem;
+    }
+
+    .notif-summary-row:last-child { border-bottom: none; }
+
+    .notif-summary-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+    }
+
+    .notif-summary-label i { font-size: 0.8rem; }
+
+    .notif-summary-val {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    @media (max-width: 900px) {
+        .notif-layout { grid-template-columns: 1fr; }
+        .notif-side-panel { display: none; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="notif-layout">
 
-<h2>Your Notifications</h2>
-
-{% if notifications %}
-    {% for n in notifications %}
-        <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-            <a href="{{ url_for('labour.view_single_job', job_id=n.job_id) }}">
-                  {{ n.message }}
-            </a>
+    <!-- ── LEFT — notification list ── -->
+    <div>
+        <div class="notif-page-header">
+            <div>
+                <h1>Notifications</h1>
+                <p style="color:var(--text-muted);font-size:0.875rem;margin:4px 0 0;">
+                    Stay updated on your jobs and applications
+                </p>
+            </div>
+            {% if notifications %}
+                <span class="notif-count-badge">
+                    {{ notifications|length }} notification{{ 's' if notifications|length != 1 }}
+                </span>
+            {% endif %}
         </div>
-    {% endfor %}
-{% else %}
-    <p>No notifications.</p>
-{% endif %}
 
+        {% if notifications %}
+            <div class="notif-list">
+                {% for n in notifications %}
+                    {% set msg = n.message|lower %}
+                    {% if 'accepted' in msg %}
+                        {% set icon = 'bi-check-circle-fill' %}
+                        {% set icon_class = 'green' %}
+                    {% elif 'rejected' in msg %}
+                        {% set icon = 'bi-x-circle-fill' %}
+                        {% set icon_class = 'orange' %}
+                    {% else %}
+                        {% set icon = 'bi-briefcase-fill' %}
+                        {% set icon_class = 'blue' %}
+                    {% endif %}
+
+                    <a href="{{ url_for('labour.view_single_job', job_id=n.job_id) }}"
+                       class="notif-item {% if not n.is_read %}unread{% endif %}">
+                        <div class="notif-icon-wrap {{ icon_class }}">
+                            <i class="bi {{ icon }}"></i>
+                        </div>
+                        <div class="notif-body">
+                            <div class="notif-message">{{ n.message }}</div>
+                            <div class="notif-meta">
+                                <i class="bi bi-clock"></i>
+                                {{ n.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                                {% if not n.is_read %}
+                                    &nbsp;·&nbsp;
+                                    <span style="color:var(--accent);font-weight:600;">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not n.is_read %}
+                            <div class="notif-unread-dot"></div>
+                        {% endif %}
+                        <i class="bi bi-chevron-right notif-arrow"></i>
+                    </a>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="notif-empty">
+                <div class="notif-empty-icon"><i class="bi bi-bell-slash"></i></div>
+                <h3>No notifications yet</h3>
+                <p>You'll be notified here when there's activity on your jobs or applications.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ── RIGHT — decorative side panel ── -->
+    <aside class="notif-side-panel">
+
+        <!-- Illustration card -->
+        <div class="notif-illustration-card">
+            <div class="notif-svg-wrap">
+                <svg viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     style="width:100%;max-width:220px;margin:0 auto;display:block;opacity:0.85;">
+
+                    <!-- Faint background circle -->
+                    <circle cx="120" cy="100" r="88" fill="currentColor" opacity="0.04"
+                            style="color:var(--accent)"/>
+
+                    <!-- Bell body -->
+                    <path d="M120 28 C95 28 75 48 75 75 L75 110 L60 125 L180 125 L165 110 L165 75 C165 48 145 28 120 28Z"
+                          fill="none" stroke="currentColor" stroke-width="5"
+                          stroke-linecap="round" stroke-linejoin="round"
+                          opacity="0.18" style="color:var(--accent)"/>
+
+                    <!-- Bell clapper -->
+                    <path d="M108 125 C108 132 114 138 120 138 C126 138 132 132 132 125"
+                          fill="none" stroke="currentColor" stroke-width="5"
+                          stroke-linecap="round" opacity="0.18" style="color:var(--accent)"/>
+
+                    <!-- Notification dots / rings -->
+                    <circle cx="120" cy="100" r="32" fill="none"
+                            stroke="currentColor" stroke-width="1.5"
+                            stroke-dasharray="4 6" opacity="0.12"
+                            style="color:var(--accent)"/>
+                    <circle cx="120" cy="100" r="52" fill="none"
+                            stroke="currentColor" stroke-width="1"
+                            stroke-dasharray="3 8" opacity="0.08"
+                            style="color:var(--accent)"/>
+
+                    <!-- Small floating notification cards -->
+                    <!-- Card 1 — top right -->
+                    <rect x="148" y="38" width="72" height="28" rx="8"
+                          fill="currentColor" opacity="0.07" style="color:var(--accent)"/>
+                    <rect x="156" y="46" width="28" height="4" rx="2"
+                          fill="currentColor" opacity="0.2" style="color:var(--accent)"/>
+                    <rect x="156" y="54" width="18" height="3" rx="1.5"
+                          fill="currentColor" opacity="0.12" style="color:var(--accent)"/>
+                    <circle cx="148" cy="52" r="6" fill="#16a34a" opacity="0.25"/>
+                    <text x="145" y="56" font-size="7" fill="#16a34a" opacity="0.6">✓</text>
+
+                    <!-- Card 2 — left -->
+                    <rect x="18" y="72" width="68" height="28" rx="8"
+                          fill="currentColor" opacity="0.07" style="color:var(--accent)"/>
+                    <rect x="26" y="80" width="24" height="4" rx="2"
+                          fill="currentColor" opacity="0.2" style="color:var(--accent)"/>
+                    <rect x="26" y="88" width="36" height="3" rx="1.5"
+                          fill="currentColor" opacity="0.12" style="color:var(--accent)"/>
+                    <circle cx="18" cy="86" r="6" fill="currentColor" opacity="0.2"
+                            style="color:var(--accent)"/>
+
+                    <!-- Card 3 — bottom right -->
+                    <rect x="152" y="138" width="72" height="28" rx="8"
+                          fill="currentColor" opacity="0.07" style="color:var(--accent)"/>
+                    <rect x="160" y="146" width="20" height="4" rx="2"
+                          fill="currentColor" opacity="0.2" style="color:var(--accent)"/>
+                    <rect x="160" y="154" width="32" height="3" rx="1.5"
+                          fill="currentColor" opacity="0.12" style="color:var(--accent)"/>
+                    <circle cx="152" cy="152" r="6" fill="#ea580c" opacity="0.25"/>
+
+                    <!-- Pulse rings around bell tip -->
+                    <circle cx="165" cy="42" r="5" fill="currentColor"
+                            opacity="0.3" style="color:var(--accent)"/>
+                    <circle cx="165" cy="42" r="9" fill="none"
+                            stroke="currentColor" stroke-width="1.5"
+                            opacity="0.15" style="color:var(--accent)"/>
+                    <circle cx="165" cy="42" r="14" fill="none"
+                            stroke="currentColor" stroke-width="1"
+                            opacity="0.08" style="color:var(--accent)"/>
+                </svg>
+            </div>
+
+            <div class="notif-panel-title">Stay in the loop</div>
+            <p class="notif-panel-desc">
+                Notifications keep you updated on job applications,
+                acceptances and new opportunities in your city.
+            </p>
+        </div>
+
+        <!-- Summary stats card -->
+        <div class="notif-summary-card">
+            <div class="notif-summary-title">Summary</div>
+
+            {# counts passed from route #}
+            <span class="notif-summary-val">{{ notifications|length }}</span>
+            <span class="notif-summary-val" style="color:var(--accent);">{{ unread_count }}</span>
+            <span class="notif-summary-val" style="color:#16a34a;">{{ accepted_count }}</span>
+            <span class="notif-summary-val" style="color:#ea580c;">{{ rejected_count }}</span>
+
+            <div class="notif-summary-row">
+                <span class="notif-summary-label">
+                    <i class="bi bi-bell-fill" style="color:var(--accent);"></i> Total
+                </span>
+                <span class="notif-summary-val">{{ notifications|length }}</span>
+            </div>
+            <div class="notif-summary-row">
+                <span class="notif-summary-label">
+                    <i class="bi bi-circle-fill" style="color:var(--accent);font-size:0.5rem;"></i> Unread
+                </span>
+                <span class="notif-summary-val" style="color:var(--accent);">{{ unread_count }}</span>
+            </div>
+            <div class="notif-summary-row">
+                <span class="notif-summary-label">
+                    <i class="bi bi-check-circle-fill" style="color:#16a34a;"></i> Accepted
+                </span>
+                <span class="notif-summary-val" style="color:#16a34a;">{{ accepted }}</span>
+            </div>
+            <div class="notif-summary-row">
+                <span class="notif-summary-label">
+                    <i class="bi bi-x-circle-fill" style="color:#ea580c;"></i> Rejected
+                </span>
+                <span class="notif-summary-val" style="color:#ea580c;">{{ rejected }}</span>
+            </div>
+        </div>
+
+    </aside>
+</div>
 {% endblock %}
