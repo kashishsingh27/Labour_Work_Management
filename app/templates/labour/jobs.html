@@ -3,59 +3,680 @@
 {% block title %}Available Jobs{% endblock %}
 
 {% block content %}
+<style>
+    /* ── Page layout ─────────────────────────────────────── */
+    .jobs-page { display: flex; flex-direction: column; gap: 24px; }
 
-<form method="GET">
+    /* ── Filter card ─────────────────────────────────────── */
+    .filter-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        padding: 20px 24px;
+    }
+    .filter-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+    }
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    .filter-field {
+        flex: 1 1 160px;
+        position: relative;
+    }
+    .filter-field .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        pointer-events: none;
+        z-index: 1;
+    }
+    .filter-field input,
+    .filter-field select {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 14px 10px 36px;
+        font-size: 0.875rem;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+    .filter-field input::placeholder { color: var(--text-muted); }
+    .filter-field input:focus,
+    .filter-field select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    /* chevron for select */
+    .select-wrapper::after {
+        content: '\F282';
+        font-family: 'Bootstrap-Icons';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        pointer-events: none;
+    }
+    .btn-filter {
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-filter:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+    }
+    .btn-clear {
+        background: transparent;
+        color: var(--text-muted);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 18px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-clear:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
 
-<input type="text" name="city" placeholder="City">
-<input type="text" name="pincode" placeholder="Pincode">
-<input type="number" name="min_wage" placeholder="Minimum Wage">
+    /* ── Results header ───────────────────────────────────── */
+    .results-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .results-count {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+    .results-count strong {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
 
-<select name="work_type">
-<option value="">Work Type</option>
-<option value="Construction">Construction</option>
-<option value="Electrical">Electrical</option>
-<option value="Plumbing">Plumbing</option>
-</select>
+    /* ── Job cards grid ───────────────────────────────────── */
+    .jobs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 18px;
+    }
+    .job-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+        animation: fadeInUp 0.35s ease both;
+    }
+    .job-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .job-card:nth-child(1) { animation-delay: 0.05s; }
+    .job-card:nth-child(2) { animation-delay: 0.10s; }
+    .job-card:nth-child(3) { animation-delay: 0.15s; }
+    .job-card:nth-child(4) { animation-delay: 0.20s; }
+    .job-card:nth-child(5) { animation-delay: 0.25s; }
+    .job-card:nth-child(6) { animation-delay: 0.30s; }
 
-<button type="submit">Filter</button>
+    .job-card-header { display: flex; align-items: flex-start; gap: 14px; }
+    .job-icon-box {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: var(--accent-light);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .job-title-group { flex: 1; min-width: 0; }
+    .job-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-decoration: none;
+        line-height: 1.3;
+        display: block;
+    }
+    .job-title:hover { color: var(--accent); }
+    .job-work-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        background: var(--accent-light);
+        color: var(--accent);
+    }
 
-</form>
+    .job-description {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.55;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin: 0;
+    }
 
-<br>
+    .job-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+    .meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+    }
+    .meta-chip i { color: var(--text-muted); font-size: 0.8rem; }
+    .meta-chip.wage {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #16a34a;
+        font-weight: 600;
+    }
+    .meta-chip.wage i { color: #16a34a; }
+    [data-theme="dark"] .meta-chip.wage {
+        background: rgba(22,163,74,0.12);
+        border-color: rgba(22,163,74,0.25);
+        color: #4ade80;
+    }
+    [data-theme="dark"] .meta-chip.wage i { color: #4ade80; }
 
-<h2>Available Jobs</h2>
+    .job-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .poster-info { display: flex; align-items: center; gap: 8px; }
+    .poster-avatar {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+    }
+    .poster-text { display: flex; flex-direction: column; }
+    .poster-name {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .posted-date {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+    .btn-apply {
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 7px 18px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-apply:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+        color: #fff;
+        text-decoration: none;
+    }
 
-{% if jobs %}
+    /* ── Empty state ──────────────────────────────────────── */
+    .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+    }
+    .empty-icon-box {
+        width: 64px; height: 64px;
+        border-radius: 16px;
+        background: var(--accent-light);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.8rem;
+        margin: 0 auto 16px;
+    }
+    .empty-state h3 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+    }
+    .empty-state p {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
 
-{% for job in jobs %}
+    /* ── Back link ────────────────────────────────────────── */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    .back-link:hover { color: var(--accent); }
 
-<div style="border:1px solid #ddd; padding:10px; margin-bottom:10px;">
+    /* ── Modal ────────────────────────────────────────────── */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(2px);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        padding: 32px 28px 24px;
+        width: 100%;
+        max-width: 420px;
+        margin: 16px;
+        animation: slideUp 0.25s ease;
+        text-align: center;
+    }
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .modal-icon-box {
+        width: 56px; height: 56px;
+        border-radius: 16px;
+        background: var(--accent-light);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem;
+        margin: 0 auto 16px;
+    }
+    .modal-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+    }
+    .modal-job-name {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin: 0 0 8px;
+    }
+    .modal-body-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin: 0 0 24px;
+        line-height: 1.5;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .btn-modal-cancel {
+        flex: 1;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-modal-cancel:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-modal-confirm {
+        flex: 1;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-modal-confirm:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+        color: #fff;
+        text-decoration: none;
+    }
 
-<h3><a href="{{ url_for('labour.job_detail', job_id=job.id) }}">
-    {{ job.title }}
-</a></h3>
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .jobs-grid { grid-template-columns: 1fr; }
+        .filter-row { flex-direction: column; }
+        .filter-field { flex: 1 1 100%; }
+        .btn-filter, .btn-clear { width: 100%; justify-content: center; }
+    }
+</style>
 
-<p>{{ job.description }}</p>
+<!-- Confirm Apply Modal -->
+<div class="modal-overlay" id="applyModal">
+    <div class="modal-box">
+        <div class="modal-icon-box">
+            <i class="bi bi-briefcase-fill"></i>
+        </div>
+        <div class="modal-title">Confirm Application</div>
+        <div class="modal-job-name" id="modalJobTitle"></div>
+        <div class="modal-body-text">
+            You're about to apply for this job. The contractor will be notified and can accept or reject your application.
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+            <a href="#" id="modalConfirmBtn" class="btn-modal-confirm">
+                <i class="bi bi-send-fill"></i> Apply Now
+            </a>
+        </div>
+    </div>
+</div>
 
-<p><strong>City:</strong> {{ job.city }}</p>
+<div class="jobs-page">
 
-<p><small>Posted by: {{ job.contractor.username }}</small></p>
+    <!-- Page Header -->
+    <div>
+        <a href="{{ url_for('labour.labour_dashboard') }}" class="back-link">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+        <div class="page-header" style="margin-top:14px; margin-bottom:0;">
+            <h1 style="font-size:1.75rem; font-weight:700; margin:0;">Available Jobs</h1>
+            <p style="color:var(--text-muted); margin:4px 0 0; font-size:0.9rem;">
+                Browse and apply for work opportunities near you
+            </p>
+        </div>
+    </div>
 
-<a href="{{ url_for('labour.apply_job', job_id=job.id) }}"
-style="display:inline-block; padding:5px 10px; background:#28a745; color:white; text-decoration:none;">
-Apply
-</a>
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <div class="filter-title">
+            <i class="bi bi-funnel" style="margin-right:6px;"></i>Filter Jobs
+        </div>
+        <form method="GET">
+            <div class="filter-row">
+
+                <!-- City -->
+                <div class="filter-field">
+                    <i class="bi bi-geo-alt input-icon"></i>
+                    <input
+                        type="text"
+                        name="city"
+                        placeholder="City"
+                        value="{{ request.args.get('city', '') }}"
+                    >
+                </div>
+
+                <!-- Pincode -->
+                <div class="filter-field">
+                    <i class="bi bi-mailbox input-icon"></i>
+                    <input
+                        type="text"
+                        name="pincode"
+                        placeholder="Pincode"
+                        value="{{ request.args.get('pincode', '') }}"
+                    >
+                </div>
+
+                <!-- Min Wage -->
+                <div class="filter-field">
+                    <i class="bi bi-currency-rupee input-icon"></i>
+                    <input
+                        type="number"
+                        name="min_wage"
+                        placeholder="Min. Wage (₹)"
+                        value="{{ request.args.get('min_wage', '') }}"
+                    >
+                </div>
+
+                <!-- Work Type — dynamic, only shown if options exist -->
+                {% if work_types %}
+                <div class="filter-field select-wrapper">
+                    <i class="bi bi-tools input-icon"></i>
+                    <select name="work_type">
+                        <option value="">All Work Types</option>
+                        {% for wt in work_types %}
+                        <option value="{{ wt }}" {{ 'selected' if request.args.get('work_type') == wt }}>
+                            {{ wt }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn-filter">
+                    <i class="bi bi-search" style="margin-right:6px;"></i>Search
+                </button>
+
+                {% if request.args %}
+                <a href="{{ url_for('labour.view_jobs') }}" class="btn-clear">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+                {% endif %}
+
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    {% if jobs %}
+
+    <div class="results-meta">
+        <span class="results-count">
+            Showing <strong>{{ jobs|length }}</strong> job{{ 's' if jobs|length != 1 else '' }}
+            {% if request.args.get('city') %} in <strong>{{ request.args.get('city') }}</strong>{% endif %}
+            {% if request.args.get('work_type') %} &middot; <strong>{{ request.args.get('work_type') }}</strong>{% endif %}
+        </span>
+    </div>
+
+    <div class="jobs-grid">
+        {% for job in jobs %}
+        <div class="job-card">
+
+            <div class="job-card-header">
+                <div class="job-icon-box">
+                    <i class="bi bi-hammer"></i>
+                </div>
+                <div class="job-title-group">
+                    <a href="{{ url_for('labour.job_detail', job_id=job.id) }}" class="job-title">
+                        {{ job.title }}
+                    </a>
+                    {% if job.work_type %}
+                    <span class="job-work-type">
+                        <i class="bi bi-tag-fill"></i> {{ job.work_type }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="job-description">{{ job.description }}</p>
+
+            <div class="job-meta">
+                {% if job.city %}
+                <span class="meta-chip">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    {{ job.city }}{% if job.pincode %} — {{ job.pincode }}{% endif %}
+                </span>
+                {% endif %}
+                {% if job.locality %}
+                <span class="meta-chip">
+                    <i class="bi bi-map-fill"></i> {{ job.locality }}
+                </span>
+                {% endif %}
+                {% if job.wage %}
+                <span class="meta-chip wage">
+                    <i class="bi bi-currency-rupee"></i>{{ job.wage }}/day
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="job-card-footer">
+                <div class="poster-info">
+                    <div class="poster-avatar">
+                        {{ job.contractor.username[0].upper() }}
+                    </div>
+                    <div class="poster-text">
+                        <span class="poster-name">{{ job.contractor.username }}</span>
+                        <span class="posted-date">{{ job.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+                <button
+                    class="btn-apply"
+                    onclick="openModal('{{ job.title|e }}', '{{ url_for('labour.apply_job', job_id=job.id) }}')"
+                >
+                    <i class="bi bi-send"></i> Apply
+                </button>
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <div class="empty-icon-box">
+            <i class="bi bi-briefcase"></i>
+        </div>
+        <h3>No jobs found</h3>
+        <p>
+            {% if request.args %}
+                No jobs match your current filters. Try adjusting your search.
+            {% else %}
+                There are no available jobs at the moment. Check back soon!
+            {% endif %}
+        </p>
+    </div>
+
+    {% endif %}
 
 </div>
 
-{% endfor %}
+<script>
+    function openModal(jobTitle, applyUrl) {
+        document.getElementById('modalJobTitle').textContent = jobTitle;
+        document.getElementById('modalConfirmBtn').href = applyUrl;
+        document.getElementById('applyModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 
-{% else %}
+    function closeModal() {
+        document.getElementById('applyModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
 
-<p>No jobs available.</p>
+    document.getElementById('applyModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
 
-{% endif %}
-
-<a href="{{ url_for('labour.labour_dashboard') }}">Back to Dashboard</a>
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+</script>
 
 {% endblock %}

@@ -3,10 +3,11 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models import Job, Application, Rating
+from app.models import Job, Application, Rating, User
 
 from flask_mail import Message
 from app.extensions import mail
+from sqlalchemy import distinct
 
 labour = Blueprint("labour", __name__, url_prefix="/labour")
 
@@ -43,8 +44,8 @@ def view_jobs():
     if current_user.role != "labour":
         return redirect(url_for("auth.login"))
 
-    city = request.args.get("city")
-    pincode = request.args.get("pincode")
+    city     = request.args.get("city")
+    pincode  = request.args.get("pincode")
     min_wage = request.args.get("min_wage")
     work_type = request.args.get("work_type")
 
@@ -52,19 +53,22 @@ def view_jobs():
 
     if city:
         query = query.filter(Job.city.ilike(f"%{city}%"))
-
     if pincode:
         query = query.filter(Job.pincode == pincode)
-
     if min_wage:
         query = query.filter(Job.wage >= int(min_wage))
-
     if work_type:
         query = query.filter(Job.work_type == work_type)
 
     jobs = query.order_by(Job.created_at.desc()).all()
 
-    return render_template("labour/jobs.html", jobs=jobs)
+    work_types = db.session.query(distinct(Job.work_type))\
+        .filter(Job.work_type != None, Job.work_type != "")\
+        .order_by(Job.work_type)\
+        .all()
+    work_types = [wt[0] for wt in work_types]
+
+    return render_template("labour/jobs.html", jobs=jobs, work_types=work_types)
 
 
 @labour.route("/apply/<int:job_id>")
@@ -164,12 +168,17 @@ def labour_profile(user_id):
         labour_id=labour_user.id,
         status="Accepted"
     ).count()
+    total_applications = Application.query.filter_by(
+    labour_id=labour_user.id
+    ).count()
  
     return render_template(
-        "labour_profile.html",
+        "labour/labour_profile.html",
         labour_user=labour_user,
         applications=applications,
         ratings=ratings,
         avg_rating=avg_rating,
-        jobs_completed=jobs_completed
+        jobs_completed=jobs_completed,
+        total_applications=total_applications, 
+        rating_count=len(ratings)
     )
