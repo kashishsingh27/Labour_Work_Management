@@ -1,13 +1,460 @@
 {% extends "base.html" %}
+{% block title %}{{ job.title }} — LWMS{% endblock %}
+
+{% block head %}
+<style>
+    .job-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 24px;
+        align-items: start;
+        max-width: 1100px;
+    }
+
+    /* ── BACK LINK ── */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    /* ── MAIN CARD ── */
+    .job-main-card {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Top banner */
+    .job-banner {
+        background: linear-gradient(135deg, #1e3a8a, #2563eb, #0891b2);
+        padding: 32px 32px 28px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .job-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    .job-banner-content { position: relative; z-index: 1; }
+
+    .job-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 20px;
+        padding: 4px 14px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        backdrop-filter: blur(8px);
+    }
+
+    .job-banner h1 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 12px;
+        line-height: 1.2;
+    }
+
+    .job-banner-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .job-banner-meta span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+    }
+
+    /* Job body */
+    .job-body { padding: 28px 32px; }
+
+    .job-section-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 14px;
+    }
+
+    .job-description {
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-bottom: 28px;
+        white-space: pre-line;
+    }
+
+    /* Detail grid */
+    .job-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .job-detail-item {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .job-detail-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: var(--accent-light);
+        color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .job-detail-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+    }
+
+    .job-detail-value {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* ── SIDEBAR ── */
+    .job-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: sticky;
+        top: 88px;
+    }
+
+    .sidebar-card {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .sidebar-card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 16px;
+    }
+
+    /* Wage highlight */
+    .wage-display {
+        text-align: center;
+        padding: 16px 0;
+    }
+
+    .wage-amount {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #16a34a;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .wage-label {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    /* Contractor info */
+    .contractor-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .contractor-row:last-child { border-bottom: none; }
+
+    .contractor-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .contractor-name {
+        font-weight: 600;
+        font-size: 0.88rem;
+        color: var(--text-primary);
+    }
+
+    .contractor-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    /* Apply button */
+    .apply-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        margin-bottom: 10px;
+    }
+
+    .apply-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+        color: white;
+    }
+
+    .apply-btn.disabled {
+        background: var(--bg-primary);
+        color: var(--text-muted);
+        border: 1.5px solid var(--border-color);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 1;
+    }
+
+    .apply-note {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* Posted date */
+    .posted-date {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    @media (max-width: 860px) {
+        .job-layout { grid-template-columns: 1fr; }
+        .job-sidebar { position: static; }
+        .job-details-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1 style="color:red;">JOB DETAIL TEMPLATE LOADED</h1>
-<h2>{{ job.title }}</h2>
+<a href="javascript:history.back()" class="back-link">
+    <i class="bi bi-arrow-left"></i> Back to Jobs
+</a>
 
-<p><strong>City:</strong> {{ job.city }}</p>
-<p><strong>Pincode:</strong> {{ job.pincode }}</p>
-<p><strong>Wage:</strong> {{ job.wage }}</p>
-<p><strong>Work Type:</strong> {{ job.work_type }}</p>
-<p><strong>Description:</strong> {{ job.description }}</p>
+<div class="job-layout">
+
+    <!-- ── MAIN CARD ── -->
+    <div class="job-main-card">
+
+        <!-- Banner -->
+        <div class="job-banner">
+            <div class="job-banner-content">
+                {% if job.work_type %}
+                <div class="job-type-badge">
+                    <i class="bi bi-tag-fill"></i> {{ job.work_type }}
+                </div>
+                {% endif %}
+                <h1>{{ job.title }}</h1>
+                <div class="job-banner-meta">
+                    <span><i class="bi bi-geo-alt-fill"></i> {{ job.city }}{% if job.locality %}, {{ job.locality }}{% endif %}</span>
+                    <span><i class="bi bi-cash-stack"></i> ₹{{ job.wage }} / day</span>
+                    <span><i class="bi bi-calendar3"></i> Posted {{ job.created_at.strftime('%d %b %Y') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="job-body">
+
+            <!-- Description -->
+            <div class="job-section-title">Job Description</div>
+            <div class="job-description">{{ job.description }}</div>
+
+            <!-- Details grid -->
+            <div class="job-section-title">Job Details</div>
+            <div class="job-details-grid">
+
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div>
+                        <div class="job-detail-label">City</div>
+                        <div class="job-detail-value">{{ job.city }}</div>
+                    </div>
+                </div>
+
+                {% if job.locality %}
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-map-fill"></i></div>
+                    <div>
+                        <div class="job-detail-label">Locality</div>
+                        <div class="job-detail-value">{{ job.locality }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if job.landmark %}
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-signpost-fill"></i></div>
+                    <div>
+                        <div class="job-detail-label">Landmark</div>
+                        <div class="job-detail-value">{{ job.landmark }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if job.pincode %}
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-mailbox-fill"></i></div>
+                    <div>
+                        <div class="job-detail-label">Pincode</div>
+                        <div class="job-detail-value">{{ job.pincode }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-cash-stack"></i></div>
+                    <div>
+                        <div class="job-detail-label">Daily Wage</div>
+                        <div class="job-detail-value" style="color:#16a34a;">₹{{ job.wage }}</div>
+                    </div>
+                </div>
+
+                {% if job.work_type %}
+                <div class="job-detail-item">
+                    <div class="job-detail-icon"><i class="bi bi-tools"></i></div>
+                    <div>
+                        <div class="job-detail-label">Work Type</div>
+                        <div class="job-detail-value">{{ job.work_type }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="job-sidebar">
+
+        <!-- Wage card -->
+        <div class="sidebar-card">
+            <div class="sidebar-card-title">Daily Wage</div>
+            <div class="wage-display">
+                <div class="wage-amount">₹{{ job.wage }}</div>
+                <div class="wage-label">per day</div>
+            </div>
+        </div>
+
+        <!-- Apply card -->
+        <div class="sidebar-card">
+            <div class="sidebar-card-title">Apply for this Job</div>
+
+            {% if current_user.role == "labour" %}
+                <a href="{{ url_for('labour.apply_job', job_id=job.id) }}" class="apply-btn">
+                    <i class="bi bi-send-fill"></i> Apply Now
+                </a>
+                <div class="apply-note">
+                    <i class="bi bi-shield-check"></i>
+                    Your application will be sent to the contractor
+                </div>
+            {% else %}
+                <div class="apply-btn disabled">
+                    <i class="bi bi-lock-fill"></i> Only Labour Can Apply
+                </div>
+                <div class="apply-note">Login as a labour worker to apply</div>
+            {% endif %}
+
+            <div class="posted-date">
+                <i class="bi bi-clock"></i>
+                Posted on {{ job.created_at.strftime('%d %b %Y') }}
+            </div>
+        </div>
+
+        <!-- Contractor card -->
+        <div class="sidebar-card">
+            <div class="sidebar-card-title">Posted By</div>
+            <div class="contractor-row">
+                <div class="contractor-avatar">
+                    {{ job.contractor.username[0].upper() }}
+                </div>
+                <div>
+                    <div class="contractor-name">{{ job.contractor.username }}</div>
+                    <div class="contractor-label">Contractor</div>
+                </div>
+            </div>
+            <div class="contractor-row">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <div>
+                    <div class="contractor-label">Location</div>
+                    <div class="contractor-name">{{ job.contractor.city or 'Not specified' }}</div>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+</div>
 
 {% endblock %}
