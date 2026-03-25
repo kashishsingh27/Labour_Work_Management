@@ -1,42 +1,590 @@
 {% extends "base.html" %}
 
-{% block title %}Labour Dashboard{% endblock %}
+{% block title %}Dashboard — {{ current_user.username }}{% endblock %}
 
 {% block content %}
-<h2>Welcome, {{ current_user.username }}</h2>
-<p>You are logged in as Labour.</p>
+<style>
+    .dashboard { display: flex; flex-direction: column; gap: 22px; }
 
-<nav>
-    <a href="{{ url_for('labour.view_jobs') }}" class="btn btn-primary">View Available Jobs</a>
-    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
-</nav>
+    /* ── Welcome banner ───────────────────────────────────── */
+    .welcome-banner {
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 60%, #2563eb 100%);
+        border-radius: 16px;
+        padding: 24px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 0.4s ease both;
+    }
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+    .welcome-left { position: relative; z-index: 1; }
+    .welcome-greeting {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.65);
+        margin: 0 0 3px;
+    }
+    .welcome-name {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 10px;
+        line-height: 1.2;
+    }
+    .welcome-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .welcome-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 20px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
+    }
+    .welcome-right {
+        position: relative; z-index: 1;
+        display: flex; gap: 16px;
+    }
+    .banner-stat {
+        text-align: center;
+        padding: 10px 18px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 12px;
+        min-width: 80px;
+    }
+    .banner-stat-num {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+        display: block;
+    }
+    .banner-stat-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.65);
+        margin-top: 3px;
+        display: block;
+    }
+    @media (max-width: 600px) {
+        .welcome-banner { flex-direction: column; align-items: flex-start; }
+        .welcome-right { width: 100%; }
+        .banner-stat { flex: 1; }
+    }
+
+    /* ── Stats row ────────────────────────────────────────── */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+    @media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        box-shadow: var(--shadow-sm);
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: fadeInUp 0.4s ease both;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .stat-card:nth-child(1) { animation-delay: 0.06s; }
+    .stat-card:nth-child(2) { animation-delay: 0.10s; }
+    .stat-card:nth-child(3) { animation-delay: 0.14s; }
+    .stat-card:nth-child(4) { animation-delay: 0.18s; }
+
+    .stat-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    /* neutralised icon tints — very soft */
+    .icon-blue   { background: rgba(37,99,235,0.08);  color: #3b82f6; }
+    .icon-amber  { background: rgba(217,119,6,0.08);  color: #d97706; }
+    .icon-green  { background: rgba(22,163,74,0.08);  color: #16a34a; }
+    .icon-slate  { background: rgba(100,116,139,0.1); color: #64748b; }
+    [data-theme="dark"] .icon-blue  { background: rgba(59,130,246,0.12); color: #60a5fa; }
+    [data-theme="dark"] .icon-amber { background: rgba(251,191,36,0.1);  color: #fbbf24; }
+    [data-theme="dark"] .icon-green { background: rgba(74,222,128,0.1);  color: #4ade80; }
+    [data-theme="dark"] .icon-slate { background: rgba(148,163,184,0.1); color: #94a3b8; }
+
+    .stat-body { flex: 1; min-width: 0; }
+    .stat-num {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+    .stat-lbl {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    /* ── Shared card ──────────────────────────────────────── */
+    .lwms-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        animation: fadeInUp 0.4s ease both;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-head {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .card-title-icon {
+        width: 28px; height: 28px;
+        border-radius: 7px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.78rem;
+    }
+    .card-link {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--accent);
+        text-decoration: none;
+    }
+    .card-link:hover { text-decoration: underline; }
+    .card-body { padding: 16px 20px 20px; }
+
+    /* ── Main grid ────────────────────────────────────────── */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 16px;
+        align-items: start;
+    }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ── Applications list ────────────────────────────────── */
+    .app-list { display: flex; flex-direction: column; gap: 8px; }
+    .app-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        text-decoration: none;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+    .app-item:hover { border-color: var(--accent); transform: translateX(3px); text-decoration: none; }
+    .app-item-icon {
+        width: 34px; height: 34px; border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.85rem; flex-shrink: 0;
+    }
+    .app-item-info { flex: 1; min-width: 0; }
+    .app-item-title {
+        font-family: 'Poppins', sans-serif; font-size: 0.82rem; font-weight: 600;
+        color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-item-meta {
+        font-family: 'Inter', sans-serif; font-size: 0.72rem;
+        color: var(--text-muted); margin-top: 1px;
+    }
+    .status-pill {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 2px 8px; border-radius: 20px;
+        font-size: 0.7rem; font-weight: 600;
+        font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0;
+    }
+    .status-pending  { background: rgba(217,119,6,0.1);  color: #d97706; }
+    .status-accepted { background: rgba(22,163,74,0.1);  color: #16a34a; }
+    .status-rejected { background: rgba(220,38,38,0.1);  color: #dc2626; }
+    [data-theme="dark"] .status-pending  { background: rgba(251,191,36,0.12);  color: #fbbf24; }
+    [data-theme="dark"] .status-accepted { background: rgba(74,222,128,0.12);  color: #4ade80; }
+    [data-theme="dark"] .status-rejected { background: rgba(248,113,113,0.12); color: #f87171; }
+
+    /* ── Nearby jobs ──────────────────────────────────────── */
+    .nearby-list { display: flex; flex-direction: column; gap: 8px; }
+    .nearby-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        text-decoration: none;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+    .nearby-item:hover { border-color: var(--accent); transform: translateX(3px); text-decoration: none; }
+    .nearby-item-icon {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; flex-shrink: 0;
+    }
+    .nearby-item-info { flex: 1; min-width: 0; }
+    .nearby-item-title {
+        font-family: 'Poppins', sans-serif; font-size: 0.8rem; font-weight: 600;
+        color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .nearby-item-meta { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+    .nearby-wage { font-family: 'Poppins', sans-serif; font-size: 0.78rem; font-weight: 700; color: #16a34a; flex-shrink: 0; }
+    [data-theme="dark"] .nearby-wage { color: #4ade80; }
+
+    /* ── Charts ───────────────────────────────────────────── */
+    .chart-wrap-bar   { position: relative; height: 180px; }
+    .chart-wrap-gauge { position: relative; height: 200px; display: flex; align-items: center; justify-content: center; }
+    .gauge-center {
+        position: absolute;
+        text-align: center;
+        top: 58%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+    .gauge-pct {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1;
+        display: block;
+    }
+    .gauge-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-top: 3px;
+    }
+
+    /* ── Empty state ──────────────────────────────────────── */
+    .empty-state {
+        text-align: center; padding: 24px 12px;
+        font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-muted);
+    }
+    .empty-state i { font-size: 1.5rem; display: block; margin-bottom: 6px; opacity: 0.4; }
+</style>
+
+<div class="dashboard">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="welcome-left">
+            <div class="welcome-greeting">Good to see you back 👋</div>
+            <div class="welcome-name">{{ current_user.username }}</div>
+            <div class="welcome-chips">
+                <span class="welcome-chip"><i class="bi bi-person-fill"></i> Labour Worker</span>
+                {% if current_user.city %}
+                <span class="welcome-chip"><i class="bi bi-geo-alt-fill"></i> {{ current_user.city }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="welcome-right">
+            <div class="banner-stat">
+                <span class="banner-stat-num">{{ available_jobs }}</span>
+                <span class="banner-stat-label">Open Jobs</span>
+            </div>
+            <div class="banner-stat">
+                <span class="banner-stat-num">{{ pending_count }}</span>
+                <span class="banner-stat-label">Pending</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="bi bi-send-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-num">{{ total_applications }}</div>
+                <div class="stat-lbl">Total Applied</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-num">{{ accepted_count }}</div>
+                <div class="stat-lbl">Accepted</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-amber"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-body">
+                <div class="stat-num">{{ pending_count }}</div>
+                <div class="stat-lbl">Pending</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-slate"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-num">{{ rejected_count }}</div>
+                <div class="stat-lbl">Rejected</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two column: charts left, info right -->
+    <div class="main-grid">
+
+        <!-- LEFT: charts stacked -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Weekly bar chart -->
+            <div class="lwms-card" style="animation-delay:0.14s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-blue"><i class="bi bi-bar-chart-fill"></i></div>
+                        This Week's Activity
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-wrap-bar">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success gauge -->
+            <div class="lwms-card" style="animation-delay:0.19s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-green"><i class="bi bi-graph-up-arrow"></i></div>
+                        Success Rate
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-wrap-gauge">
+                        <canvas id="gaugeChart"></canvas>
+                        <div class="gauge-center">
+                            {% if total_applications > 0 %}
+                                {% set rate = ((accepted_count / total_applications) * 100) | round(1) %}
+                            {% else %}
+                                {% set rate = 0 %}
+                            {% endif %}
+                            <span class="gauge-pct">{{ rate }}%</span>
+                            <span class="gauge-label">Success</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: info stacked -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Recent Applications -->
+            <div class="lwms-card" style="animation-delay:0.22s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-blue"><i class="bi bi-file-earmark-text"></i></div>
+                        Recent Applications
+                    </div>
+                    <a href="{{ url_for('labour.view_jobs') }}" class="card-link">Browse →</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_applications %}
+                    <div class="app-list">
+                        {% for app in recent_applications %}
+                        <a href="{{ url_for('labour.job_detail', job_id=app.job.id) }}" class="app-item">
+                            <div class="app-item-icon icon-blue"><i class="bi bi-hammer"></i></div>
+                            <div class="app-item-info">
+                                <div class="app-item-title">{{ app.job.title }}</div>
+                                <div class="app-item-meta">
+                                    {{ app.job.city }}{% if app.job.work_type %} · {{ app.job.work_type }}{% endif %}{% if app.job.wage %} · ₹{{ app.job.wage }}/day{% endif %}
+                                </div>
+                            </div>
+                            <span class="status-pill status-{{ app.status | lower }}">
+                                {% if app.status == 'Pending' %}<i class="bi bi-clock"></i>
+                                {% elif app.status == 'Accepted' %}<i class="bi bi-check-circle-fill"></i>
+                                {% else %}<i class="bi bi-x-circle-fill"></i>{% endif %}
+                                {{ app.status }}
+                            </span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        No applications yet — start applying!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Nearby Jobs -->
+            <div class="lwms-card" style="animation-delay:0.27s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-green"><i class="bi bi-geo-alt-fill"></i></div>
+                        Jobs Near You
+                        {% if current_user.city %}
+                        <span style="font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:500;color:var(--text-muted);">· {{ current_user.city }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('labour.view_jobs') }}" class="card-link">All →</a>
+                </div>
+                <div class="card-body">
+                    {% if nearby_jobs %}
+                    <div class="nearby-list">
+                        {% for job in nearby_jobs %}
+                        <a href="{{ url_for('labour.job_detail', job_id=job.id) }}" class="nearby-item">
+                            <div class="nearby-item-icon icon-slate"><i class="bi bi-briefcase-fill"></i></div>
+                            <div class="nearby-item-info">
+                                <div class="nearby-item-title">{{ job.title }}</div>
+                                <div class="nearby-item-meta">{{ job.locality or job.city }}{% if job.work_type %} · {{ job.work_type }}{% endif %}</div>
+                            </div>
+                            {% if job.wage %}<span class="nearby-wage">₹{{ job.wage }}</span>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-geo-alt"></i>
+                        {% if current_user.city %}No jobs in {{ current_user.city }} right now.
+                        {% else %}Set your city in your <a href="{{ url_for('labour.labour_profile', user_id=current_user.id) }}" style="color:var(--accent);">profile</a> to see nearby jobs.{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<canvas id="performanceChart" aria-label="Labour performance chart" role="img"></canvas>
-
 <script>
-const ctx = document.getElementById('performanceChart').getContext('2d');
+(function() {
+    const isDark    = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    const textMuted = '#8a92a6';
+    const tooltipBg = isDark ? '#1e2235' : '#fff';
+    const tooltipTitle = isDark ? '#e8eaf6' : '#1a1f36';
+    const tooltipBody  = isDark ? '#8a92a6' : '#5a6278';
+    const tooltipBorder = isDark ? '#2a2f4a' : '#e2e8f0';
 
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Jobs Completed', 'Average Rating'],
-        datasets: [{
-            label: 'Performance',
-            data: [{{ jobs_completed }}, {{ avg_rating }}],
-            backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
-            borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
+    const tooltipDefaults = {
+        backgroundColor: tooltipBg,
+        titleColor: tooltipTitle,
+        bodyColor: tooltipBody,
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        titleFont: { family: 'Poppins', weight: '600', size: 12 },
+        bodyFont:  { family: 'Inter', size: 11 },
+    };
+
+    /* ── Weekly bar chart ── */
+    new Chart(document.getElementById('weeklyChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: {{ weekly_labels | tojson }},
+            datasets: [{
+                label: 'Applications',
+                data: {{ weekly_counts | tojson }},
+                backgroundColor: isDark ? 'rgba(59,130,246,0.25)' : 'rgba(37,99,235,0.12)',
+                borderColor: isDark ? '#3b82f6' : '#2563eb',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tooltipDefaults },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { color: textMuted, font: { family: 'Inter', size: 11, weight: '600' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    border: { display: false },
+                    ticks: { color: textMuted, font: { family: 'Inter', size: 10 }, stepSize: 1, precision: 0 }
+                }
             }
         }
-    }
-});
+    });
+
+    /* ── Success gauge (half-doughnut) ── */
+    {% if total_applications > 0 %}
+    {% set rate = ((accepted_count / total_applications) * 100) | round(1) %}
+    {% else %}
+    {% set rate = 0 %}
+    {% endif %}
+    const rate = {{ rate }};
+    new Chart(document.getElementById('gaugeChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [rate, 100 - rate],
+                backgroundColor: [
+                    rate >= 60 ? '#16a34a' : rate >= 30 ? '#d97706' : '#dc2626',
+                    isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                ],
+                borderWidth: 0,
+                borderRadius: [6, 0],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            circumference: 180,
+            rotation: -90,
+            cutout: '72%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false },
+            }
+        }
+    });
+})();
 </script>
+
 {% endblock %}

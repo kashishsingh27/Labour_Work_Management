@@ -1,746 +1,492 @@
 {% extends "base.html" %}
-{% block title %}{{ labour_user.username }} — Worker Profile | LWMS{% endblock %}
 
-{% block head %}
+{% block title %}{{ labour_user.username }} — Profile{% endblock %}
+
+{% block content %}
 <style>
-    .profile-page {
-        background: var(--bg-primary);
-        min-height: 100vh;
-        padding-bottom: 4rem;
+    .profile-page { display: flex; flex-direction: column; gap: 22px; }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 18px;
+        align-items: start;
     }
+    @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
 
-    /* ====== HERO BANNER ====== */
-    .profile-banner {
-        height: 200px;
-        background: linear-gradient(135deg, #0c1e38 0%, #0f2744 50%, #0c1e38 100%);
-        position: relative;
-        overflow: hidden;
-    }
+    /* ── Neutralised icon tints ───────────────────────────── */
+    .icon-blue   { background: rgba(37,99,235,0.08);  color: #3b82f6; }
+    .icon-amber  { background: rgba(217,119,6,0.08);  color: #d97706; }
+    .icon-green  { background: rgba(22,163,74,0.08);  color: #16a34a; }
+    .icon-slate  { background: rgba(100,116,139,0.1); color: #64748b; }
+    .icon-red    { background: rgba(220,38,38,0.08);  color: #dc2626; }
+    [data-theme="dark"] .icon-blue  { background: rgba(59,130,246,0.12);  color: #60a5fa; }
+    [data-theme="dark"] .icon-amber { background: rgba(251,191,36,0.1);   color: #fbbf24; }
+    [data-theme="dark"] .icon-green { background: rgba(74,222,128,0.1);   color: #4ade80; }
+    [data-theme="dark"] .icon-slate { background: rgba(148,163,184,0.1);  color: #94a3b8; }
+    [data-theme="dark"] .icon-red   { background: rgba(248,113,113,0.1);  color: #f87171; }
 
-    .profile-banner::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-            linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
-        background-size: 40px 40px;
-    }
-
-    .banner-orb {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(60px);
-        pointer-events: none;
-    }
-
-    .banner-orb-1 {
-        width: 300px; height: 300px;
-        background: radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%);
-        top: -100px; right: 10%;
-    }
-
-    .banner-orb-2 {
-        width: 250px; height: 250px;
-        background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%);
-        bottom: -80px; left: 5%;
-    }
-
-    /* ====== AVATAR ====== */
-    .profile-avatar-wrap {
-        position: relative;
-        margin-top: -60px;
-        margin-bottom: 1rem;
-        display: inline-block;
-    }
-
-    .profile-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 4px solid var(--bg-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Syne', sans-serif;
-        font-size: 2.8rem;
-        font-weight: 800;
-        color: white;
-        background: linear-gradient(135deg, #3b82f6, #60a5fa);
-        box-shadow: 0 8px 32px rgba(59,130,246,0.4);
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* TODO BACKEND: If user uploads a photo, set img src to user.profile_photo */
-    .profile-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-        position: absolute;
-        top: 0; left: 0;
-    }
-
-    .photo-upload-hint {
-        position: absolute;
-        bottom: 0; right: 0;
-        width: 32px; height: 32px;
-        background: var(--accent);
-        border-radius: 50%;
-        border: 3px solid var(--bg-primary);
-        display: flex; align-items: center; justify-content: center;
-        color: white;
-        font-size: 0.75rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .photo-upload-hint:hover {
-        background: var(--accent-hover);
-        transform: scale(1.1);
-    }
-
-    .role-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 14px;
-        background: rgba(59,130,246,0.15);
-        border: 1px solid rgba(59,130,246,0.3);
-        border-radius: 100px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--accent);
-        margin-bottom: 0.5rem;
-    }
-
-    .profile-name {
-        font-family: 'Syne', sans-serif;
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: var(--text-primary);
-        margin-bottom: 0.25rem;
-    }
-
-    .profile-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 0.5rem;
-    }
-
-    .profile-meta-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-    }
-
-    /* ====== RATING DISPLAY ====== */
-    .avg-rating-display {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 6px;
-    }
-
-    .avg-rating-number {
-        font-family: 'Syne', sans-serif;
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: var(--text-primary);
-    }
-
-    .stars-display {
-        display: flex;
-        gap: 2px;
-    }
-
-    .star-filled { color: #f59e0b; font-size: 0.9rem; }
-    .star-empty { color: var(--border-color); font-size: 0.9rem; }
-
-    .rating-count {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-    }
-
-    /* ====== STATS ====== */
-    .stat-card {
+    /* ── Shared card ──────────────────────────────────────── */
+    .lwms-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: 16px;
-        padding: 1.5rem;
-        text-align: center;
-        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        animation: fadeInUp 0.35s ease both;
     }
-
-    .stat-card:hover {
-        border-color: rgba(59,130,246,0.3);
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-card);
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
-
-    .stat-card-value {
-        font-family: 'Syne', sans-serif;
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--text-primary);
-        line-height: 1;
-        margin-bottom: 6px;
-    }
-
-    .stat-card-label {
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        font-weight: 500;
-    }
-
-    .stat-icon {
-        width: 40px; height: 40px;
-        border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.1rem;
-        margin: 0 auto 0.75rem;
-    }
-
-    /* ====== INFO CARD ====== */
-    .info-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
-        padding: 1.75rem;
-        margin-bottom: 1.25rem;
-    }
-
-    .info-card-title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        color: var(--text-muted);
-        margin-bottom: 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .info-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px 0;
+    .card-head {
+        padding: 16px 20px;
+        display: flex; align-items: center; justify-content: space-between;
         border-bottom: 1px solid var(--border-color);
     }
-
-    .info-row:last-child { border-bottom: none; }
-
-    .info-row-icon {
-        width: 36px; height: 36px;
-        border-radius: 10px;
-        background: var(--bg-secondary);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.9rem;
-        color: var(--accent);
-        flex-shrink: 0;
+    .card-title {
+        font-family: 'Poppins', sans-serif; font-size: 0.9rem; font-weight: 700;
+        color: var(--text-primary); margin: 0;
+        display: flex; align-items: center; gap: 8px;
     }
-
-    .info-row-label {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        font-weight: 500;
-        margin-bottom: 2px;
+    .card-title-icon {
+        width: 28px; height: 28px; border-radius: 7px;
+        display: flex; align-items: center; justify-content: center; font-size: 0.78rem;
     }
+    .card-body { padding: 16px 20px 20px; }
 
-    .info-row-value {
-        font-size: 0.9rem;
-        color: var(--text-primary);
-        font-weight: 500;
-    }
-
-    /* ====== JOB HISTORY ====== */
-    .job-history-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 1.1rem;
-        background: var(--bg-secondary);
-        border-radius: 14px;
-        border: 1px solid var(--border-color);
-        margin-bottom: 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-    .job-history-item:hover {
-        border-color: rgba(59,130,246,0.3);
-        transform: translateX(4px);
-    }
-
-    .job-history-icon {
-        width: 44px; height: 44px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.1));
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.1rem;
-        color: var(--accent);
-        flex-shrink: 0;
-    }
-
-    .job-history-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 4px;
-    }
-
-    .job-history-meta {
-        font-size: 0.78rem;
-        color: var(--text-secondary);
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .status-pill {
-        padding: 3px 10px;
-        border-radius: 100px;
-        font-size: 0.72rem;
-        font-weight: 600;
-    }
-
-    .pill-accepted {
-        background: rgba(16,185,129,0.12);
-        color: var(--success);
-        border: 1px solid rgba(16,185,129,0.3);
-    }
-
-    .pill-pending {
-        background: rgba(245,158,11,0.12);
-        color: var(--warning);
-        border: 1px solid rgba(245,158,11,0.3);
-    }
-
-    .pill-rejected {
-        background: rgba(239,68,68,0.12);
-        color: var(--danger);
-        border: 1px solid rgba(239,68,68,0.3);
-    }
-
-    /* ====== REVIEWS ====== */
-    .review-item {
-        padding: 1.1rem;
-        background: var(--bg-secondary);
-        border-radius: 14px;
-        border: 1px solid var(--border-color);
-        margin-bottom: 0.75rem;
-    }
-
-    .review-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .reviewer-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .mini-avatar {
-        width: 32px; height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent-2), #f97316);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: white;
-    }
-
-    .reviewer-name {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    .review-date {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-    }
-
-    .review-text {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        margin-top: 6px;
-        line-height: 1.6;
-    }
-
-    /* ====== EDIT BUTTON ====== */
-    .btn-edit-profile {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 9px 20px;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-glass);
-        color: var(--text-secondary);
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-    }
-
-    .btn-edit-profile:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-    }
-
-    /* ====== EMPTY STATE ====== */
-    .empty-state {
+    /* ── Identity card ────────────────────────────────────── */
+    .identity-top {
+        padding: 24px 20px 18px;
         text-align: center;
-        padding: 2.5rem 1rem;
-        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .profile-avatar {
+        width: 68px; height: 68px; border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Poppins', sans-serif; font-size: 1.7rem; font-weight: 700; color: #fff;
+        margin: 0 auto 12px;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+    }
+    .profile-name {
+        font-family: 'Poppins', sans-serif; font-size: 1.05rem; font-weight: 700;
+        color: var(--text-primary); margin: 0 0 6px;
+    }
+    .profile-role-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px;
+        background: rgba(37,99,235,0.08); color: #3b82f6;
+        border-radius: 20px;
+        font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600;
+    }
+    [data-theme="dark"] .profile-role-badge { background: rgba(59,130,246,0.12); color: #60a5fa; }
+
+    /* info rows */
+    .info-rows { display: flex; flex-direction: column; }
+    .info-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row-icon {
+        width: 30px; height: 30px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .info-row-label {
+        font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 600;
+        color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .info-row-value {
+        font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+        color: var(--text-primary); margin-top: 1px;
+    }
+    .info-row-value.muted { color: var(--text-muted); font-style: italic; }
+
+    /* edit button */
+    .btn-edit-profile {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        margin: 14px 20px 18px;
+        padding: 9px;
+        background: rgba(37,99,235,0.07);
+        color: var(--accent);
+        border: 1px solid rgba(37,99,235,0.15);
+        border-radius: 9px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.82rem;
+        cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-edit-profile:hover { background: var(--accent-light); border-color: var(--accent); }
+    [data-theme="dark"] .btn-edit-profile { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.2); }
+
+    /* edit mode */
+    #view-mode, #edit-mode { transition: opacity 0.2s ease; }
+    #edit-mode { display: none; }
+    .edit-form-inner { padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .edit-field { display: flex; flex-direction: column; gap: 4px; }
+    .edit-label {
+        font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600;
+        color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .edit-input-wrap { position: relative; }
+    .edit-input-wrap i {
+        position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+        color: var(--text-muted); font-size: 0.82rem; pointer-events: none;
+    }
+    .edit-input {
+        width: 100%; background: var(--input-bg);
+        border: 1.5px solid var(--border-color); border-radius: 9px;
+        padding: 9px 12px 9px 34px;
+        font-size: 0.85rem; font-family: 'Inter', sans-serif; color: var(--text-primary); outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .edit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .edit-actions { display: flex; gap: 8px; }
+    .btn-save {
+        flex: 1; background: linear-gradient(135deg, #2563eb, #0ea5e9); color: #fff;
+        border: none; border-radius: 9px; padding: 9px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.82rem;
+        cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+        transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-cancel-edit {
+        flex: 1; background: transparent; color: var(--text-muted);
+        border: 1.5px solid var(--border-color); border-radius: 9px; padding: 9px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.82rem;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-cancel-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+    .member-since {
+        display: flex; align-items: center; gap: 7px;
+        padding: 10px 20px; border-top: 1px solid var(--border-color);
+        font-family: 'Inter', sans-serif; font-size: 0.75rem; color: var(--text-muted);
     }
 
-    .empty-state i {
-        font-size: 2.5rem;
-        margin-bottom: 0.75rem;
-        display: block;
+    /* ── Mini stats ───────────────────────────────────────── */
+    .mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 20px 18px; }
+    .mini-stat {
+        background: var(--input-bg); border: 1px solid var(--border-color);
+        border-radius: 11px; padding: 11px 12px; text-align: center;
+    }
+    .mini-stat-num {
+        font-family: 'Poppins', sans-serif; font-size: 1.3rem; font-weight: 800;
+        color: var(--text-primary); display: block; line-height: 1;
+    }
+    .mini-stat-label {
+        font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 600;
+        color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+        margin-top: 3px; display: block;
     }
 
-    .empty-state p {
-        font-size: 0.875rem;
-        margin: 0;
+    /* ── Rating ───────────────────────────────────────────── */
+    .rating-summary { display: flex; align-items: center; gap: 20px; margin-bottom: 16px; }
+    .rating-big { text-align: center; flex-shrink: 0; }
+    .rating-number-big {
+        font-family: 'Poppins', sans-serif; font-size: 2.6rem; font-weight: 800;
+        color: #d97706; line-height: 1; display: block;
     }
+    .rating-stars-big { display: flex; gap: 3px; justify-content: center; margin: 5px 0 3px; }
+    .rating-stars-big i { color: #d97706; font-size: 0.82rem; }
+    .rating-stars-big i.empty { color: var(--border-color); }
+    .rating-count-label { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--text-muted); }
+
+    .rating-bars { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .rating-bar-row { display: flex; align-items: center; gap: 8px; }
+    .rating-bar-label { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); width: 18px; text-align: right; flex-shrink: 0; }
+    .rating-bar-track { flex: 1; height: 6px; background: var(--border-color); border-radius: 99px; overflow: hidden; }
+    .rating-bar-fill { height: 100%; background: linear-gradient(90deg, #d97706, #f59e0b); border-radius: 99px; transition: width 1s ease; }
+    .rating-bar-count { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--text-muted); width: 14px; flex-shrink: 0; }
+
+    .ratings-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .rating-item { padding: 11px 13px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 11px; }
+    .rating-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .rating-item-who { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .rating-item-who-avatar {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.62rem; font-weight: 700; color: #fff;
+    }
+    .rating-item-stars { display: flex; gap: 2px; }
+    .rating-item-stars i { font-size: 0.68rem; color: #d97706; }
+    .rating-item-stars i.empty { color: var(--border-color); }
+    .rating-item-review { font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+    .rating-item-date { font-family: 'Inter', sans-serif; font-size: 0.68rem; color: var(--text-muted); margin-top: 5px; }
+
+    /* ── Completed jobs ───────────────────────────────────── */
+    .jobs-list { display: flex; flex-direction: column; gap: 8px; }
+    .job-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 12px;
+        background: var(--input-bg); border: 1px solid var(--border-color);
+        border-radius: 10px; text-decoration: none; transition: border-color 0.2s, transform 0.2s;
+    }
+    .job-item:hover { border-color: var(--accent); transform: translateX(3px); text-decoration: none; }
+    .job-item-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+    .job-item-info { flex: 1; min-width: 0; }
+    .job-item-title { font-family: 'Poppins', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .job-item-meta { font-family: 'Inter', sans-serif; font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+    .job-done-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 2px 8px; background: rgba(22,163,74,0.08); color: #16a34a;
+        border-radius: 20px; font-size: 0.68rem; font-weight: 600;
+        font-family: 'Inter', sans-serif; flex-shrink: 0;
+    }
+    [data-theme="dark"] .job-done-badge { background: rgba(74,222,128,0.1); color: #4ade80; }
+
+    .empty-state {
+        text-align: center; padding: 28px 12px;
+        font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-muted);
+    }
+    .empty-state i { font-size: 1.5rem; display: block; margin-bottom: 6px; opacity: 0.4; }
 </style>
-{% endblock %}
 
-{% block content %}
 <div class="profile-page">
 
-    <!-- ===== BANNER ===== -->
-    <div class="profile-banner">
-        <div class="banner-orb banner-orb-1"></div>
-        <div class="banner-orb banner-orb-2"></div>
+    <!-- Page Header -->
+    <div class="page-header" style="margin-bottom:0;">
+        <h1 style="font-size:1.6rem;font-weight:700;margin:0;">
+            {% if current_user.id == labour_user.id %}My Profile{% else %}{{ labour_user.username }}{% endif %}
+        </h1>
+        <p style="color:var(--text-muted);margin:4px 0 0;font-size:0.875rem;">
+            {% if current_user.id == labour_user.id %}Manage your information and view your work history{% else %}Labour worker profile{% endif %}
+        </p>
     </div>
 
-    <div class="container">
+    <div class="profile-grid">
 
-        <!-- ===== PROFILE HEADER ===== -->
-        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4" style="margin-top: -20px;">
+        <!-- ── Sidebar ── -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
 
-            <div class="d-flex align-items-end gap-4">
-                <div class="profile-avatar-wrap">
-                    <div class="profile-avatar">
-                        {# TODO BACKEND: If labour_user.profile_photo exists, show <img src="{{ labour_user.profile_photo }}"> #}
-                        {{ labour_user.username[0].upper() }}
-                    </div>
-                    {% if current_user.id == labour_user.id %}
-                        <!-- TODO BACKEND: Wire to file upload route for profile photo -->
-                        <div class="photo-upload-hint" title="Upload photo (coming soon)">
-                            <i class="bi bi-camera"></i>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div style="padding-bottom: 8px;">
-                    <div class="role-chip">
-                        <i class="bi bi-person-arms-up"></i> Labour / Worker
-                    </div>
+            <!-- Identity -->
+            <div class="lwms-card" style="animation-delay:0.05s;">
+                <div class="identity-top">
+                    <div class="profile-avatar">{{ labour_user.username[0].upper() }}</div>
                     <div class="profile-name">{{ labour_user.username }}</div>
+                    <div class="profile-role-badge"><i class="bi bi-person-fill"></i> Labour Worker</div>
+                </div>
 
-                    <!-- Average Rating Display -->
-                    <!-- TODO BACKEND: Pass avg_rating from route (already computed in labour_dashboard) -->
-                    {% if avg_rating and avg_rating > 0 %}
-                        <div class="avg-rating-display">
-                            <span class="avg-rating-number">{{ avg_rating }}</span>
-                            <div class="stars-display">
-                                {% set full_stars = avg_rating | int %}
-                                {% for i in range(1, 6) %}
-                                    <i class="bi bi-star-fill {% if i <= full_stars %}star-filled{% else %}star-empty{% endif %}"></i>
-                                {% endfor %}
+                <!-- View mode -->
+                <div id="view-mode">
+                    <div class="info-rows">
+                        <div class="info-row">
+                            <div class="info-row-icon icon-slate"><i class="bi bi-envelope-fill"></i></div>
+                            <div>
+                                <div class="info-row-label">Email</div>
+                                <div class="info-row-value">{{ labour_user.email }}</div>
                             </div>
-                            <!-- TODO BACKEND: Pass rating_count from route -->
-                            <span class="rating-count">({{ rating_count if rating_count is defined else '—' }} ratings)</span>
                         </div>
-                    {% else %}
-                        <div class="profile-meta-item mt-1" style="color:var(--text-muted); font-size:0.82rem;">
-                            <i class="bi bi-star"></i> No ratings yet
-                        </div>
-                    {% endif %}
-
-                    <div class="profile-meta">
-                        <span class="profile-meta-item">
-                            <i class="bi bi-envelope"></i> {{ labour_user.email }}
-                        </span>
-                        {% if labour_user.phone %}
-                            <span class="profile-meta-item">
-                                <i class="bi bi-telephone"></i> {{ labour_user.phone }}
-                            </span>
-                        {% endif %}
-                        {% if labour_user.city %}
-                            <span class="profile-meta-item">
-                                <i class="bi bi-geo-alt"></i> {{ labour_user.city }}
-                            </span>
-                        {% endif %}
-                        <span class="profile-meta-item">
-                            <i class="bi bi-calendar3"></i> Member since {{ labour_user.created_at.strftime('%b %Y') }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {% if current_user.id == labour_user.id %}
-                {# TODO BACKEND: Create edit_profile route for labour #}
-                <a href="#" class="btn-edit-profile">
-                    <i class="bi bi-pencil"></i> Edit Profile
-                </a>
-            {% endif %}
-        </div>
-
-        <!-- ===== STATS ROW ===== -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(59,130,246,0.12); color:var(--accent);">
-                        <i class="bi bi-send-fill"></i>
-                    </div>
-                    <!-- TODO BACKEND: Pass total_applications count from route -->
-                    <div class="stat-card-value">{{ total_applications if total_applications is defined else '—' }}</div>
-                    <div class="stat-card-label">Applications Sent</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success);">
-                        <i class="bi bi-check-circle-fill"></i>
-                    </div>
-                    <!-- TODO BACKEND: Pass jobs_completed (status==Accepted) from route — already in labour_dashboard -->
-                    <div class="stat-card-value">{{ jobs_completed if jobs_completed is defined else '—' }}</div>
-                    <div class="stat-card-label">Jobs Completed</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(245,158,11,0.12); color:var(--accent-2);">
-                        <i class="bi bi-star-fill"></i>
-                    </div>
-                    <!-- TODO BACKEND: avg_rating already computed in labour_dashboard route -->
-                    <div class="stat-card-value">{{ avg_rating if avg_rating else '—' }}</div>
-                    <div class="stat-card-label">Avg. Rating</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:rgba(167,139,250,0.12); color:#a78bfa;">
-                        <i class="bi bi-chat-square-text-fill"></i>
-                    </div>
-                    <!-- TODO BACKEND: Pass rating_count from route -->
-                    <div class="stat-card-value">{{ rating_count if rating_count is defined else '—' }}</div>
-                    <div class="stat-card-label">Reviews Received</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== MAIN CONTENT ===== -->
-        <div class="row g-4">
-
-            <!-- LEFT COLUMN: Job History + Reviews -->
-            <div class="col-lg-8">
-
-                <!-- Job Application History -->
-                <div class="info-card">
-                    <div class="info-card-title">
-                        <i class="bi bi-clock-history" style="color:var(--accent);"></i>
-                        Job History
-                        {# TODO BACKEND: Fetch from Application.query.filter_by(labour_id=labour_user.id).all() #}
-                    </div>
-
-                    {% if applications %}
-                        {% for app in applications %}
-                            <div class="job-history-item">
-                                <div class="job-history-icon">
-                                    <i class="bi bi-briefcase"></i>
+                        <div class="info-row">
+                            <div class="info-row-icon icon-slate"><i class="bi bi-geo-alt-fill"></i></div>
+                            <div>
+                                <div class="info-row-label">City</div>
+                                <div class="info-row-value {% if not labour_user.city %}muted{% endif %}">
+                                    {{ labour_user.city or 'Not set' }}
                                 </div>
-                                <div style="flex:1;">
-                                    <div class="job-history-title">{{ app.job.title }}</div>
-                                    <div class="job-history-meta">
-                                        <span><i class="bi bi-building"></i> {{ app.job.contractor.username }}</span>
-                                        <span><i class="bi bi-geo-alt"></i> {{ app.job.city }}</span>
-                                        <span><i class="bi bi-cash"></i> ₹{{ app.job.wage }}/day</span>
-                                    </div>
-                                </div>
-                                <span class="status-pill align-self-center
-                                    {% if app.status == 'Accepted' %}pill-accepted
-                                    {% elif app.status == 'Rejected' %}pill-rejected
-                                    {% else %}pill-pending{% endif %}">
-                                    {{ app.status }}
-                                </span>
                             </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="bi bi-briefcase"></i>
-                            <p>No job applications yet.</p>
                         </div>
-                    {% endif %}
-
+                        <div class="info-row">
+                            <div class="info-row-icon icon-slate"><i class="bi bi-telephone-fill"></i></div>
+                            <div>
+                                <div class="info-row-label">Phone</div>
+                                <div class="info-row-value {% if not labour_user.phone %}muted{% endif %}">
+                                    {{ labour_user.phone or 'Not set' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {% if current_user.id == labour_user.id %}
-                        <div class="mt-3">
-                            <a href="{{ url_for('labour.view_jobs') }}" class="btn-primary-lwms btn d-inline-flex align-items-center gap-2">
-                                <i class="bi bi-search"></i> Browse Jobs
-                            </a>
-                        </div>
+                    <button class="btn-edit-profile" onclick="toggleEdit(true)">
+                        <i class="bi bi-pencil-fill"></i> Edit Profile
+                    </button>
                     {% endif %}
                 </div>
 
-                <!-- Reviews/Ratings Received -->
-                <div class="info-card">
-                    <div class="info-card-title">
-                        <i class="bi bi-chat-quote" style="color:var(--accent-2);"></i>
-                        Reviews Received
-                        {# TODO BACKEND: Fetch from Rating.query.filter_by(labour_id=labour_user.id).all() #}
+                <!-- Edit mode -->
+                {% if current_user.id == labour_user.id %}
+                <div id="edit-mode">
+                    <form method="POST" action="{{ url_for('labour.edit_labour_profile', user_id=labour_user.id) }}">
+                        <div class="edit-form-inner">
+                            <div class="edit-field">
+                                <label class="edit-label">Username</label>
+                                <div class="edit-input-wrap">
+                                    <i class="bi bi-person"></i>
+                                    <input class="edit-input" type="text" name="username" value="{{ labour_user.username }}" required>
+                                </div>
+                            </div>
+                            <div class="edit-field">
+                                <label class="edit-label">City</label>
+                                <div class="edit-input-wrap">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <input class="edit-input" type="text" name="city" value="{{ labour_user.city or '' }}" placeholder="Your city">
+                                </div>
+                            </div>
+                            <div class="edit-field">
+                                <label class="edit-label">Phone</label>
+                                <div class="edit-input-wrap">
+                                    <i class="bi bi-telephone"></i>
+                                    <input class="edit-input" type="text" name="phone" value="{{ labour_user.phone or '' }}" placeholder="Phone number">
+                                </div>
+                            </div>
+                            <div class="edit-actions">
+                                <button type="button" class="btn-cancel-edit" onclick="toggleEdit(false)">
+                                    <i class="bi bi-x"></i> Cancel
+                                </button>
+                                <button type="submit" class="btn-save">
+                                    <i class="bi bi-check-lg"></i> Save
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                <div class="member-since">
+                    <i class="bi bi-calendar3"></i>
+                    Member since {{ labour_user.created_at.strftime('%B %Y') }}
+                </div>
+            </div>
+
+            <!-- Mini stats -->
+            <div class="lwms-card" style="animation-delay:0.10s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-slate"><i class="bi bi-bar-chart-fill"></i></div>
+                        At a Glance
+                    </div>
+                </div>
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <span class="mini-stat-num" style="color:#16a34a;">{{ jobs_completed }}</span>
+                        <span class="mini-stat-label">Completed</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-num">{{ total_applications }}</span>
+                        <span class="mini-stat-label">Applied</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-num" style="color:#d97706;">{{ avg_rating }}</span>
+                        <span class="mini-stat-label">Avg Rating</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-num">{{ rating_count }}</span>
+                        <span class="mini-stat-label">Reviews</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Main content ── -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Ratings -->
+            <div class="lwms-card" style="animation-delay:0.08s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-amber"><i class="bi bi-star-fill"></i></div>
+                        Ratings & Reviews
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="rating-summary">
+                        <div class="rating-big">
+                            <span class="rating-number-big">{{ avg_rating }}</span>
+                            <div class="rating-stars-big">
+                                {% set full_s  = avg_rating | int %}
+                                {% set empty_s = 5 - full_s %}
+                                {% for i in range(full_s)  %}<i class="bi bi-star-fill"></i>{% endfor %}
+                                {% for i in range(empty_s) %}<i class="bi bi-star empty"></i>{% endfor %}
+                            </div>
+                            <div class="rating-count-label">{{ rating_count }} review{{ 's' if rating_count != 1 else '' }}</div>
+                        </div>
+                        <div class="rating-bars">
+                            {% for star in [5,4,3,2,1] %}
+                            {% set count = star_distribution[star - 1] %}
+                            {% set pct   = ((count / rating_count * 100) | int) if rating_count > 0 else 0 %}
+                            <div class="rating-bar-row">
+                                <span class="rating-bar-label">{{ star }}★</span>
+                                <div class="rating-bar-track">
+                                    <div class="rating-bar-fill" style="width:{{ pct }}%;"></div>
+                                </div>
+                                <span class="rating-bar-count">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     {% if ratings %}
-                        {% for r in ratings %}
-                            <div class="review-item">
-                                <div class="review-header">
-                                    <div class="reviewer-info">
-                                        <div class="mini-avatar">{{ r.contractor.username[0].upper() }}</div>
-                                        <div>
-                                            <div class="reviewer-name">{{ r.contractor.username }}</div>
-                                            <div class="review-date">{{ r.created_at.strftime('%d %b %Y') }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="stars-display">
-                                        {% for i in range(1, 6) %}
-                                            <i class="bi bi-star-fill {% if i <= r.rating %}star-filled{% else %}star-empty{% endif %}"></i>
-                                        {% endfor %}
-                                    </div>
+                    <div class="ratings-list">
+                        {% for r in ratings[:4] %}
+                        <div class="rating-item">
+                            <div class="rating-item-top">
+                                <div class="rating-item-who">
+                                    <div class="rating-item-who-avatar">{{ r.contractor.username[0].upper() }}</div>
+                                    {{ r.contractor.username }}
                                 </div>
-                                {% if r.review %}
-                                    <div class="review-text">{{ r.review }}</div>
-                                {% endif %}
-                                {% if r.job %}
-                                    <div style="margin-top:8px; font-size:0.78rem; color:var(--text-muted);">
-                                        <i class="bi bi-briefcase"></i> {{ r.job.title }}
-                                    </div>
-                                {% endif %}
+                                <div class="rating-item-stars">
+                                    {% for i in range(r.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                                    {% for i in range(5 - r.rating) %}<i class="bi bi-star empty"></i>{% endfor %}
+                                </div>
                             </div>
+                            {% if r.review %}<p class="rating-item-review">{{ r.review }}</p>{% endif %}
+                            <div class="rating-item-date">{{ r.created_at.strftime('%d %b %Y') }}</div>
+                        </div>
                         {% endfor %}
+                    </div>
                     {% else %}
-                        <div class="empty-state">
-                            <i class="bi bi-chat-square-text"></i>
-                            <p>No reviews received yet. Complete jobs to build your reputation!</p>
-                        </div>
+                    <div class="empty-state">
+                        <i class="bi bi-star"></i>
+                        No reviews yet. Complete jobs to receive ratings.
+                    </div>
                     {% endif %}
                 </div>
-
             </div>
 
-            <!-- RIGHT COLUMN -->
-            <div class="col-lg-4">
-
-                <!-- Contact Info -->
-                <div class="info-card">
-                    <div class="info-card-title">
-                        <i class="bi bi-person-vcard" style="color:var(--accent);"></i>
-                        Contact Information
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-person"></i></div>
-                        <div>
-                            <div class="info-row-label">Full Name</div>
-                            <div class="info-row-value">{{ labour_user.username }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-envelope"></i></div>
-                        <div>
-                            <div class="info-row-label">Email</div>
-                            <div class="info-row-value">{{ labour_user.email }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-telephone"></i></div>
-                        <div>
-                            <div class="info-row-label">Phone</div>
-                            <!-- TODO BACKEND: Consider showing phone only to authenticated contractors -->
-                            <div class="info-row-value">{{ labour_user.phone if labour_user.phone else '—' }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-geo-alt"></i></div>
-                        <div>
-                            <div class="info-row-label">City</div>
-                            <div class="info-row-value">{{ labour_user.city if labour_user.city else '—' }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-calendar3"></i></div>
-                        <div>
-                            <div class="info-row-label">Member Since</div>
-                            <div class="info-row-value">{{ labour_user.created_at.strftime('%B %Y') }}</div>
-                        </div>
+            <!-- Completed Jobs -->
+            <div class="lwms-card" style="animation-delay:0.16s;">
+                <div class="card-head">
+                    <div class="card-title">
+                        <div class="card-title-icon icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                        Completed Jobs
                     </div>
                 </div>
-
-                <!-- Quick Actions (only for profile owner) -->
-                {% if current_user.id == labour_user.id %}
-                    <div class="info-card">
-                        <div class="info-card-title">
-                            <i class="bi bi-lightning" style="color:var(--accent-2);"></i>
-                            Quick Actions
-                        </div>
-                        <div class="d-grid gap-2">
-                            <a href="{{ url_for('labour.view_jobs') }}" class="btn-primary-lwms btn d-flex align-items-center gap-2 justify-content-center">
-                                <i class="bi bi-search"></i> Find Jobs
-                            </a>
-                            <a href="{{ url_for('auth.view_notifications') }}" class="btn btn-outline-secondary rounded-3 d-flex align-items-center gap-2 justify-content-center" style="font-size:0.875rem; font-weight:600;">
-                                <i class="bi bi-bell"></i> Notifications
-                            </a>
-                            <a href="{{ url_for('labour.labour_dashboard') }}" class="btn btn-outline-secondary rounded-3 d-flex align-items-center gap-2 justify-content-center" style="font-size:0.875rem; font-weight:600;">
-                                <i class="bi bi-grid-1x2"></i> Dashboard
-                            </a>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- Contractor: Rate this labour button -->
-                {% if current_user.role == "contractor" and current_user.id != labour_user.id %}
-                    <!-- TODO BACKEND: Only show if contractor has an accepted application with this labour on a job -->
-                    {# Pass `rateable_job_id` from route if a mutual accepted job exists #}
-                    {% if rateable_job_id is defined and rateable_job_id %}
-                        <div class="info-card">
-                            <div class="info-card-title">
-                                <i class="bi bi-star" style="color:var(--accent-2);"></i>
-                                Rate This Worker
+                <div class="card-body">
+                    {% if completed_applications %}
+                    <div class="jobs-list">
+                        {% for app in completed_applications %}
+                        <a href="{{ url_for('labour.job_detail', job_id=app.job.id) }}" class="job-item">
+                            <div class="job-item-icon icon-green"><i class="bi bi-briefcase-fill"></i></div>
+                            <div class="job-item-info">
+                                <div class="job-item-title">{{ app.job.title }}</div>
+                                <div class="job-item-meta">
+                                    {{ app.job.city }}{% if app.job.work_type %} · {{ app.job.work_type }}{% endif %}{% if app.job.wage %} · ₹{{ app.job.wage }}/day{% endif %}
+                                </div>
                             </div>
-                            <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
-                                You've worked with {{ labour_user.username }}. Leave a rating!
-                            </p>
-                            <a href="{{ url_for('contractor.rate_labour', job_id=rateable_job_id, labour_id=labour_user.id) }}"
-                               class="btn-primary-lwms btn d-flex align-items-center gap-2 justify-content-center w-100">
-                                <i class="bi bi-star"></i> Rate Worker
-                            </a>
-                        </div>
+                            <span class="job-done-badge"><i class="bi bi-check-circle-fill"></i> Done</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-briefcase"></i>
+                        No completed jobs yet.
+                    </div>
                     {% endif %}
-                {% endif %}
-
+                </div>
             </div>
+
         </div>
     </div>
 </div>
+
+<script>
+    function toggleEdit(show) {
+        document.getElementById('view-mode').style.display = show ? 'none' : 'block';
+        document.getElementById('edit-mode').style.display = show ? 'block' : 'none';
+    }
+</script>
+
 {% endblock %}

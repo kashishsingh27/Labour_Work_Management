@@ -47,15 +47,14 @@ class Job(db.Model):
     contractor = db.relationship("User", backref="jobs")   
 
 class Application(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-
-    labour_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey("job.id"), nullable=False)
-
-    status = db.Column(db.String(20), default="Pending")
+    id         = db.Column(db.Integer, primary_key=True)
+    labour_id  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    job_id     = db.Column(db.Integer, db.ForeignKey("job.id"), nullable=False)
+    status     = db.Column(db.String(20), default="Pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # ← ADD THIS
 
     labour = db.relationship("User", backref="applications")
-    job = db.relationship("Job", backref="applications")
+    job    = db.relationship("Job", backref="applications")
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)

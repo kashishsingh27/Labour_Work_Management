@@ -2,6 +2,7 @@ from flask import Flask
 from config import Config
 from app.extensions import db, login_manager, bcrypt
 from app.extensions import mail
+from app.extensions import migrate
 
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
     login_manager.init_app(app)
     bcrypt.init_app(app)
     mail.init_app(app)
+    migrate.init_app(app, db)
 
     login_manager.login_view = "auth.login"
 
