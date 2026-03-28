@@ -1,84 +1,332 @@
 {% extends "base.html" %}
+{% block title %}Post a Job — LWMS{% endblock %}
 
-{% block title %}Post Job{% endblock %}
+{% block head %}
+<style>
+    .page-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 28px;
+        align-items: start;
+    }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .page-header p { color: var(--text-muted); font-size: 0.875rem; margin: 0; }
+
+    /* ── Section label ── */
+    .section-label {
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.08em; color: var(--text-muted);
+        margin: 22px 0 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-label:first-child { margin-top: 0; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+
+    /* ── Form fields ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .req { color: #dc2626; margin-left: 2px; }
+    .opt { font-size: 0.7rem; color: var(--text-muted); font-weight: 400; }
+
+    .input-wrap { position: relative; }
+    .fi {
+        width: 100%; background: var(--bg-card);
+        border: 1.5px solid var(--border-color); border-radius: 10px;
+        padding: 10px 14px 10px 38px; font-size: 0.875rem;
+        color: var(--text-primary); font-family: 'Inter', sans-serif;
+        outline: none; box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .fi:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .fi::placeholder { color: var(--text-muted); }
+    textarea.fi { padding-left: 14px; resize: vertical; min-height: 120px; line-height: 1.6; }
+    select.fi { cursor: pointer; }
+    .ii { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; pointer-events: none; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .wage-pre { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--accent); pointer-events: none; }
+    .wage-suf { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--text-muted); pointer-events: none; }
+
+    .counter { text-align: right; font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
+    .counter.warn { color: #d97706; }
+    .counter.over { color: #dc2626; }
+
+    #otherWrap { display: none; margin-top: 10px; }
+
+    /* ── Actions ── */
+    .form-actions {
+        display: flex; align-items: center; gap: 10px;
+        margin-top: 24px; padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-post {
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        color: white; border: none; border-radius: 10px;
+        padding: 11px 28px; font-weight: 700; font-size: 0.9rem;
+        font-family: 'Poppins', sans-serif; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s;
+    }
+    .btn-post:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+
+    .btn-cancel {
+        padding: 10px 20px; border: 1.5px solid var(--border-color);
+        border-radius: 10px; color: var(--text-secondary); background: transparent;
+        font-size: 0.875rem; font-weight: 600; font-family: 'Poppins', sans-serif;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+
+    .notif-hint { margin-left: auto; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+    /* ── Right sidebar ── */
+    .right-col { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 88px; }
+
+    .side-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px; padding: 20px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .side-card-title {
+        font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 700;
+        color: var(--text-primary); margin-bottom: 14px;
+        display: flex; align-items: center; gap: 8px;
+    }
+
+    .side-card-title i { font-size: 0.9rem; color: var(--accent); }
+
+    .tip-item {
+        display: flex; align-items: flex-start; gap: 8px;
+        font-size: 0.8rem; color: var(--text-secondary);
+        padding: 8px 0; border-bottom: 1px solid var(--border-color);
+        line-height: 1.5;
+    }
+    .tip-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .tip-item i { color: #16a34a; font-size: 0.75rem; margin-top: 2px; flex-shrink: 0; }
+
+    .checklist-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 0; border-bottom: 1px solid var(--border-color);
+        font-size: 0.82rem; color: var(--text-secondary);
+    }
+    .checklist-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .checklist-icon {
+        width: 28px; height: 28px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) { .page-layout { grid-template-columns: 1fr; } .right-col { position: static; } }
+    @media (max-width: 580px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
 
 {% block content %}
 
-<h2 class="mb-4">Post a New Job</h2>
+<div class="page-header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <a href="{{ url_for('contractor.contractor_dashboard') }}"
+           style="color:var(--text-muted);font-size:0.85rem;display:flex;align-items:center;gap:4px;text-decoration:none;">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+    </div>
+    <h1>Post a New Job</h1>
+    <p>Fill in the details below — labour workers in your city will be notified instantly by email</p>
+</div>
 
-<form method="POST">
+<div class="page-layout">
 
-    <div class="mb-3">
-        <input class="form-control"
-               type="text"
-               name="title"
-               placeholder="Job Title"
-               required>
+    <!-- ── LEFT: Form ── -->
+    <div>
+        <form method="POST">
+
+            <div class="section-label"><i class="bi bi-file-text"></i> Job Details</div>
+
+            <div class="form-group">
+                <label class="form-label">Job Title <span class="req">*</span></label>
+                <div class="input-wrap">
+                    <i class="bi bi-hammer ii"></i>
+                    <input type="text" name="title" class="fi" placeholder="e.g. Plumbing Work, Site Cleaning" required maxlength="100">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description <span class="req">*</span></label>
+                <textarea name="description" id="desc" class="fi"
+                          placeholder="Describe the work — duties, duration, number of workers needed, any requirements..."
+                          required maxlength="600"></textarea>
+                <div class="counter" id="counter">0 / 600</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Work Type <span class="req">*</span></label>
+                    <div class="input-wrap">
+                        <i class="bi bi-tools ii"></i>
+                        <select id="workTypeSelect" class="fi" required>
+                            <option value="">Select type...</option>
+                            <option>Plumbing</option><option>Electrical</option>
+                            <option>Carpentry</option><option>Welding</option>
+                            <option>Painting</option><option>Masonry</option>
+                            <option>Tiling</option><option>Flooring</option>
+                            <option>Roofing</option><option>Demolition</option>
+                            <option>Landscaping</option><option>Loading & Unloading</option>
+                            <option>Site Cleaning</option><option>General Labour</option>
+                            <option value="Other">Other...</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="work_type" id="workTypeVal">
+                    <div id="otherWrap" class="input-wrap">
+                        <i class="bi bi-pencil ii"></i>
+                        <input type="text" id="otherInput" class="fi" placeholder="Specify work type...">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Daily Wage <span class="req">*</span></label>
+                    <div class="input-wrap">
+                        <span class="wage-pre">₹</span>
+                        <input type="number" name="wage" class="fi" style="padding-left:26px;" placeholder="500" min="1" required>
+                        <span class="wage-suf">/day</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-label" style="margin-top:24px;"><i class="bi bi-geo-alt"></i> Location</div>
+
+            <div class="form-row">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">City <span class="req">*</span></label>
+                    <div class="input-wrap">
+                        <i class="bi bi-building ii"></i>
+                        <input type="text" name="city" class="fi" placeholder="e.g. Mumbai" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Pincode <span class="req">*</span></label>
+                    <div class="input-wrap">
+                        <i class="bi bi-mailbox ii"></i>
+                        <input type="text" name="pincode" class="fi" placeholder="e.g. 400001" required maxlength="6" pattern="[0-9]{6}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top:14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Locality <span class="req">*</span></label>
+                    <div class="input-wrap">
+                        <i class="bi bi-map ii"></i>
+                        <input type="text" name="locality" class="fi" placeholder="e.g. Andheri West" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Landmark <span class="opt">(optional)</span></label>
+                    <div class="input-wrap">
+                        <i class="bi bi-sign-turn-right ii"></i>
+                        <input type="text" name="landmark" class="fi" placeholder="e.g. Near City Mall">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-post">
+                    <i class="bi bi-send-fill"></i> Post Job
+                </button>
+                <a href="{{ url_for('contractor.contractor_dashboard') }}" class="btn-cancel">Cancel</a>
+                <span class="notif-hint"><i class="bi bi-bell"></i> Workers notified by email</span>
+            </div>
+
+        </form>
     </div>
 
-    <div class="mb-3">
-        <textarea class="form-control"
-                  name="description"
-                  placeholder="Job Description"
-                  required></textarea>
+    <!-- ── RIGHT: Sidebar ── -->
+    <div class="right-col">
+
+        <!-- What happens next -->
+        <div class="side-card">
+            <div class="side-card-title"><i class="bi bi-lightning-charge-fill"></i> What happens next</div>
+            <div class="checklist-item">
+                <div class="checklist-icon" style="background:rgba(37,99,235,0.08);color:#3b82f6;">
+                    <i class="bi bi-send-fill"></i>
+                </div>
+                Job posted instantly to the platform
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-icon" style="background:rgba(22,163,74,0.08);color:#16a34a;">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
+                Workers in your city get email alerts
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-icon" style="background:rgba(217,119,6,0.08);color:#d97706;">
+                    <i class="bi bi-file-earmark-person-fill"></i>
+                </div>
+                Applications arrive in your dashboard
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-icon" style="background:rgba(147,51,234,0.08);color:#9333ea;">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                Accept or reject with one click
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="side-card">
+            <div class="side-card-title"><i class="bi bi-lightbulb-fill" style="color:#f59e0b;"></i> Tips for a great post</div>
+            <div class="tip-item">
+                <i class="bi bi-check-circle-fill"></i>
+                Be specific — "Electrical Wiring Work" beats "Work Needed"
+            </div>
+            <div class="tip-item">
+                <i class="bi bi-check-circle-fill"></i>
+                Mention the duration — workers plan ahead
+            </div>
+            <div class="tip-item">
+                <i class="bi bi-check-circle-fill"></i>
+                A fair wage gets faster applications
+            </div>
+            <div class="tip-item">
+                <i class="bi bi-check-circle-fill"></i>
+                Add a landmark so workers find the site easily
+            </div>
+        </div>
+
     </div>
+</div>
 
-    <div class="mb-3">
-        <input class="form-control"
-               type="text"
-               name="city"
-               placeholder="City"
-               required>
-    </div>
+{% endblock %}
 
-    <div class="mb-3">
-    <input type="text"
-           name="locality" 
-           class="form-control" 
-           placeholder="Locality"
-           required>
-    </div>
+{% block scripts %}
+<script>
+    const select   = document.getElementById('workTypeSelect');
+    const valInput = document.getElementById('workTypeVal');
+    const other    = document.getElementById('otherWrap');
+    const otherIn  = document.getElementById('otherInput');
+    select.addEventListener('change', () => {
+        if (select.value === 'Other') {
+            other.style.display = 'block';
+            otherIn.required = true;
+            valInput.value = '';
+            otherIn.oninput = () => valInput.value = otherIn.value;
+        } else {
+            other.style.display = 'none';
+            otherIn.required = false;
+            valInput.value = select.value;
+        }
+    });
 
-    <div class="mb-3">
-    <input type="text" 
-           name="landmark" 
-           class="form-control"
-    placeholder="Landmark">
-    </div>
-
-    <div class="mb-3">
-        <input class="form-control"
-               type="text"
-               name="pincode"
-               placeholder="Pincode"
-               required>
-    </div>
-
-    <div class="mb-3">
-        <input class="form-control"
-               type="number"
-               name="wage"
-               placeholder="Daily Wage"
-               required>
-    </div>
-
-    <div class="mb-3">
-        <input class="form-control"
-               type="text"
-               name="work_type"
-               placeholder="Work Type (Welding, Carpentry, etc.)"
-               required>
-    </div>
-
-    <button class="btn btn-primary" type="submit">
-        Post Job
-    </button>
-
-</form>
-
-<a class="btn btn-secondary mt-3"
-   href="{{ url_for('contractor.contractor_dashboard') }}">
-    Back to Dashboard
-</a>
-
+    const desc = document.getElementById('desc');
+    const counter = document.getElementById('counter');
+    desc.addEventListener('input', () => {
+        const n = desc.value.length;
+        counter.textContent = `${n} / 600`;
+        counter.className = 'counter' + (n >= 600 ? ' over' : n > 510 ? ' warn' : '');
+    });
+</script>
 {% endblock %}

@@ -1,42 +1,351 @@
 {% extends "base.html" %}
 
-{% block title %}Rate Worker{% endblock %}
+{% block title %}Rate Worker — LWMS{% endblock %}
 
 {% block content %}
+<style>
+    .rating-container {
+        max-width: 600px;
+        margin: 0 auto;
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 20px;
+        overflow: hidden;
+    }
+    
+    /* Colorful background blobs throughout the screen */
+    .rating-container .blob-1 {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(71,158,142,0.25) 0%, rgba(71,158,142,0.1) 40%, transparent 70%);
+        top: -150px;
+        left: -150px;
+        border-radius: 50%;
+        z-index: 0;
+        filter: blur(60px);
+    }
+    
+    .rating-container .blob-2 {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, rgba(59,130,246,0.15) 40%, rgba(139,92,246,0.1) 60%, transparent 80%);
+        bottom: -180px;
+        right: -180px;
+        border-radius: 50%;
+        z-index: 0;
+        filter: blur(70px);
+    }
+    
+    .rating-container .blob-3 {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, rgba(6,95,70,0.1) 50%, transparent 70%);
+        top: 30%;
+        right: 20%;
+        border-radius: 50%;
+        z-index: 0;
+        filter: blur(55px);
+    }
+    
+    .rating-container .blob-4 {
+        position: absolute;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(99,102,241,0.12) 50%, transparent 70%);
+        bottom: 20%;
+        left: 15%;
+        border-radius: 50%;
+        z-index: 0;
+        filter: blur(65px);
+    }
+    
+    .rating-container .blob-5 {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.08) 50%, transparent 70%);
+        top: 60%;
+        left: 40%;
+        border-radius: 50%;
+        z-index: 0;
+        filter: blur(50px);
+    }
+    
+    .rating-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 28px;
+        padding: 40px;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+        box-shadow: var(--shadow-md);
+        backdrop-filter: blur(2px);
+        transition: all 0.3s ease;
+    }
+    
+    /* Remove the hover border effect */
+    .rating-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .rating-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    
+    .rating-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #479e8e, #2563eb);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        box-shadow: 0 8px 20px rgba(37,99,235,0.2);
+    }
+    
+    .rating-icon i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .rating-header h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 6px;
+        background: linear-gradient(135deg, var(--text-primary) 0%, #2563eb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .rating-header p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    
+    /* Star rating selector */
+    .star-rating {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 28px;
+        direction: rtl;
+    }
+    
+    .star-rating input {
+        display: none;
+    }
+    
+    .star-rating label {
+        font-size: 2rem;
+        color: var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label {
+        color: #fbbf24;
+        transform: scale(1.1);
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    
+    .form-label i {
+        color: #2563eb;
+    }
+    
+    textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 0.875rem;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+        resize: vertical;
+        min-height: 100px;
+        transition: all 0.2s;
+    }
+    
+    textarea:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    
+    textarea::placeholder {
+        color: var(--text-muted);
+    }
+    
+    .rating-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+    }
+    
+    .btn-submit {
+        flex: 1;
+        background: var(--bg-card);
+        color: #2563eb;
+        border: 2px solid #2563eb;
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    
+    .btn-submit:hover {
+        background: #2563eb;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37,99,235,0.2);
+    }
+    
+    .btn-back {
+        flex: 1;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .btn-back:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        transform: translateY(-1px);
+    }
+    
+    @media (max-width: 640px) {
+        .rating-card { padding: 28px; }
+        .star-rating { gap: 8px; }
+        .star-rating label { font-size: 1.6rem; }
+        .blob-1, .blob-2, .blob-3, .blob-4, .blob-5 { transform: scale(0.7); }
+    }
+</style>
 
-<h2 class="mb-4">Rate Worker</h2>
-
-<form method="POST">
-
-    <div class="mb-3">
-        <label class="form-label">Rating</label>
-
-        <select class="form-control" name="rating" required>
-            <option value="">Select Rating</option>
-            <option value="1">1 ⭐</option>
-            <option value="2">2 ⭐⭐</option>
-            <option value="3">3 ⭐⭐⭐</option>
-            <option value="4">4 ⭐⭐⭐⭐</option>
-            <option value="5">5 ⭐⭐⭐⭐⭐</option>
-        </select>
+<div class="rating-container">
+    <!-- Colorful blobs throughout the screen -->
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+    <div class="blob-3"></div>
+    <div class="blob-4"></div>
+    <div class="blob-5"></div>
+    
+    <div class="rating-card">
+        <div class="rating-header">
+            <div class="rating-icon">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <h2>Rate Your Experience</h2>
+            <p>Help us maintain quality by rating this worker</p>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <div class="form-label">
+                    <i class="bi bi-star"></i>
+                    <span>Your Rating</span>
+                </div>
+                <div class="star-rating">
+                    <input type="radio" name="rating" value="5" id="star5" required>
+                    <label for="star5" class="bi bi-star-fill"></label>
+                    
+                    <input type="radio" name="rating" value="4" id="star4">
+                    <label for="star4" class="bi bi-star-fill"></label>
+                    
+                    <input type="radio" name="rating" value="3" id="star3">
+                    <label for="star3" class="bi bi-star-fill"></label>
+                    
+                    <input type="radio" name="rating" value="2" id="star2">
+                    <label for="star2" class="bi bi-star-fill"></label>
+                    
+                    <input type="radio" name="rating" value="1" id="star1">
+                    <label for="star1" class="bi bi-star-fill"></label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-label">
+                    <i class="bi bi-chat-text-fill"></i>
+                    <span>Write a Review</span>
+                </div>
+                <textarea 
+                    name="review" 
+                    placeholder="Share your experience with this worker... (optional)"
+                ></textarea>
+            </div>
+            
+            <div class="rating-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-check-lg"></i> Submit Rating
+                </button>
+                <a href="{{ url_for('contractor.contractor_dashboard') }}" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Cancel
+                </a>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="mb-3">
-        <textarea class="form-control"
-                  name="review"
-                  placeholder="Write a review (optional)">
-        </textarea>
-    </div>
-
-    <button class="btn btn-success" type="submit">
-        Submit Rating
-    </button>
-
-</form>
-
-<a class="btn btn-secondary mt-3"
-   href="{{ url_for('contractor.contractor_dashboard') }}">
-    Back to Dashboard
-</a>
-
+<script>
+    const stars = document.querySelectorAll('.star-rating label');
+    stars.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+            const siblings = this.parentElement.querySelectorAll('label');
+            let found = false;
+            for (let i = siblings.length - 1; i >= 0; i--) {
+                if (siblings[i] === this) found = true;
+                if (found) siblings[i].style.transform = 'scale(1.05)';
+            }
+        });
+        
+        star.addEventListener('mouseleave', function() {
+            const siblings = this.parentElement.querySelectorAll('label');
+            siblings.forEach(s => s.style.transform = '');
+        });
+    });
+</script>
 {% endblock %}
