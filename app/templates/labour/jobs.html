@@ -4,6 +4,18 @@
 
 {% block content %}
 <style>
+    /* ── Color variables ─────────────────────────────────── */
+    :root {
+        --brown-primary: #c9b6a0;
+        --brown-soft: #d4c2ae;
+        --brown-muted: #b8a28a;
+        --teal-primary: #479e8e;
+        --teal-soft: #5cae9f;
+        --teal-muted: #3a887a;
+        --accent-blue: #2563eb;
+        --accent-blue-dark: #1d4ed8;
+    }
+
     /* ── Page layout ─────────────────────────────────────── */
     .jobs-page { display: flex; flex-direction: column; gap: 24px; }
 
@@ -14,15 +26,23 @@
         border-radius: 16px;
         box-shadow: var(--shadow-sm);
         padding: 20px 24px;
+        transition: all 0.3s ease;
+    }
+    .filter-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: var(--shadow-md);
     }
     .filter-title {
         font-family: 'Poppins', sans-serif;
         font-size: 0.85rem;
         font-weight: 600;
-        color: var(--text-muted);
+        color: var(--accent-blue);
         text-transform: uppercase;
         letter-spacing: 0.06em;
         margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
     .filter-row {
         display: flex;
@@ -55,15 +75,15 @@
         font-family: 'Inter', sans-serif;
         color: var(--text-primary);
         outline: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.2s ease;
         appearance: none;
         -webkit-appearance: none;
     }
     .filter-field input::placeholder { color: var(--text-muted); }
     .filter-field input:focus,
     .filter-field select:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
     }
     /* chevron for select */
     .select-wrapper::after {
@@ -78,7 +98,7 @@
         pointer-events: none;
     }
     .btn-filter {
-        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
         color: #fff;
         border: none;
         border-radius: 10px;
@@ -87,13 +107,14 @@
         font-weight: 600;
         font-size: 0.875rem;
         cursor: pointer;
-        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.3s ease;
         white-space: nowrap;
+        position: relative;
+        overflow: hidden;
     }
     .btn-filter:hover {
-        opacity: 0.92;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+        box-shadow: 0 4px 12px rgba(37,99,235,0.3);
     }
     .btn-clear {
         background: transparent;
@@ -113,8 +134,9 @@
         white-space: nowrap;
     }
     .btn-clear:hover {
-        border-color: var(--accent);
-        color: var(--accent);
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+        transform: translateY(-1px);
     }
 
     /* ── Results header ───────────────────────────────────── */
@@ -133,7 +155,10 @@
     .results-count strong {
         font-family: 'Poppins', sans-serif;
         font-weight: 700;
-        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     /* ── Job cards grid ───────────────────────────────────── */
@@ -146,17 +171,33 @@
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: 16px;
-        box-shadow: var(--shadow-sm);
         padding: 20px 22px;
         display: flex;
         flex-direction: column;
         gap: 14px;
-        transition: box-shadow 0.2s ease, transform 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         animation: fadeInUp 0.35s ease both;
+        position: relative;
+        overflow: hidden;
+    }
+    .job-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--teal-primary) 0%, var(--brown-primary) 100%);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
     }
     .job-card:hover {
         box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
+        transform: translateY(-4px);
+        border-color: var(--accent-blue);
+    }
+    .job-card:hover::before {
+        transform: scaleX(1);
     }
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -173,23 +214,30 @@
     .job-icon-box {
         width: 44px; height: 44px;
         border-radius: 12px;
-        background: var(--accent-light);
-        color: var(--accent);
+        background: linear-gradient(135deg, var(--teal-primary) 0%, var(--teal-soft) 100%);
+        color: white;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.2rem;
         flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(71, 158, 142, 0.2);
     }
     .job-title-group { flex: 1; min-width: 0; }
     .job-title {
         font-family: 'Poppins', sans-serif;
         font-size: 0.95rem;
         font-weight: 600;
-        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--brown-muted) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-decoration: none;
         line-height: 1.3;
         display: block;
     }
-    .job-title:hover { color: var(--accent); }
+    .job-title:hover { 
+        opacity: 0.8;
+        text-decoration: none;
+    }
     .job-work-type {
         display: inline-flex;
         align-items: center;
@@ -200,8 +248,14 @@
         font-size: 0.72rem;
         font-weight: 600;
         font-family: 'Inter', sans-serif;
-        background: var(--accent-light);
-        color: var(--accent);
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--accent-blue);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+    [data-theme="dark"] .job-work-type {
+        background: rgba(59, 130, 246, 0.12);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.2);
     }
 
     .job-description {
@@ -229,21 +283,28 @@
         color: var(--text-secondary);
         background: var(--input-bg);
         border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
     }
-    .meta-chip i { color: var(--text-muted); font-size: 0.8rem; }
+    .meta-chip:hover {
+        border-color: var(--accent-blue);
+    }
+    .meta-chip i { color: var(--accent-blue); font-size: 0.8rem; }
+    .meta-chip.location i { color: var(--brown-muted); }
     .meta-chip.wage {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-        color: #16a34a;
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
+        color: #10b981;
         font-weight: 600;
     }
-    .meta-chip.wage i { color: #16a34a; }
+    .meta-chip.wage i { color: #10b981; }
     [data-theme="dark"] .meta-chip.wage {
-        background: rgba(22,163,74,0.12);
-        border-color: rgba(22,163,74,0.25);
+        background: rgba(74, 222, 128, 0.12);
+        border-color: rgba(74, 222, 128, 0.25);
         color: #4ade80;
     }
     [data-theme="dark"] .meta-chip.wage i { color: #4ade80; }
+    [data-theme="dark"] .meta-chip i { color: #60a5fa; }
+    [data-theme="dark"] .meta-chip.location i { color: var(--brown-soft); }
 
     .job-card-footer {
         display: flex;
@@ -258,7 +319,7 @@
     .poster-avatar {
         width: 28px; height: 28px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
         display: flex; align-items: center; justify-content: center;
         font-family: 'Poppins', sans-serif;
         font-size: 0.72rem;
@@ -280,9 +341,9 @@
         color: var(--text-muted);
     }
     .btn-apply {
-        background: linear-gradient(135deg, #2563eb, #0ea5e9);
-        color: #fff;
-        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        border: 1.5px solid var(--border-color);
         border-radius: 10px;
         padding: 7px 18px;
         font-family: 'Poppins', sans-serif;
@@ -293,14 +354,14 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.3s ease;
     }
     .btn-apply:hover {
-        opacity: 0.92;
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
-        color: #fff;
         text-decoration: none;
+        background: rgba(37, 99, 235, 0.05);
     }
 
     /* ── Empty state ──────────────────────────────────────── */
@@ -310,21 +371,30 @@
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    .empty-state:hover {
+        border-color: var(--accent-blue);
+        box-shadow: var(--shadow-md);
     }
     .empty-icon-box {
         width: 64px; height: 64px;
         border-radius: 16px;
-        background: var(--accent-light);
-        color: var(--accent);
+        background: linear-gradient(135deg, var(--teal-primary) 0%, var(--teal-soft) 100%);
+        color: white;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.8rem;
         margin: 0 auto 16px;
+        box-shadow: 0 4px 12px rgba(71, 158, 142, 0.2);
     }
     .empty-state h3 {
         font-family: 'Poppins', sans-serif;
         font-size: 1rem;
         font-weight: 600;
-        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--brown-muted) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 0 0 6px;
     }
     .empty-state p {
@@ -344,17 +414,20 @@
         font-weight: 600;
         color: var(--text-muted);
         text-decoration: none;
-        transition: color 0.2s ease;
+        transition: all 0.2s ease;
     }
-    .back-link:hover { color: var(--accent); }
+    .back-link:hover { 
+        color: var(--accent-blue);
+        transform: translateX(-2px);
+    }
 
     /* ── Modal ────────────────────────────────────────────── */
     .modal-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.45);
-        backdrop-filter: blur(2px);
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
         z-index: 2000;
         align-items: center;
         justify-content: center;
@@ -381,24 +454,28 @@
     .modal-icon-box {
         width: 56px; height: 56px;
         border-radius: 16px;
-        background: var(--accent-light);
-        color: var(--accent);
+        background: linear-gradient(135deg, var(--teal-primary) 0%, var(--teal-soft) 100%);
+        color: white;
         display: flex; align-items: center; justify-content: center;
         font-size: 1.6rem;
         margin: 0 auto 16px;
+        box-shadow: 0 4px 12px rgba(71, 158, 142, 0.2);
     }
     .modal-title {
         font-family: 'Poppins', sans-serif;
         font-size: 1.1rem;
         font-weight: 700;
-        color: var(--text-primary);
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--brown-muted) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 0 0 6px;
     }
     .modal-job-name {
         font-family: 'Poppins', sans-serif;
         font-size: 0.9rem;
         font-weight: 600;
-        color: var(--accent);
+        color: var(--accent-blue);
         margin: 0 0 8px;
     }
     .modal-body-text {
@@ -422,10 +499,14 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    .btn-modal-cancel:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-modal-cancel:hover { 
+        border-color: var(--accent-blue); 
+        color: var(--accent-blue);
+        transform: translateY(-1px);
+    }
     .btn-modal-confirm {
         flex: 1;
-        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
         color: #fff;
         border: none;
         border-radius: 10px;
@@ -439,12 +520,11 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.3s ease;
     }
     .btn-modal-confirm:hover {
-        opacity: 0.92;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         color: #fff;
         text-decoration: none;
     }
@@ -496,7 +576,7 @@
     <!-- Filter Card -->
     <div class="filter-card">
         <div class="filter-title">
-            <i class="bi bi-funnel" style="margin-right:6px;"></i>Filter Jobs
+            <i class="bi bi-funnel"></i> Filter Jobs
         </div>
         <form method="GET">
             <div class="filter-row">
@@ -550,7 +630,7 @@
                 {% endif %}
 
                 <button type="submit" class="btn-filter">
-                    <i class="bi bi-search" style="margin-right:6px;"></i>Search
+                    <i class="bi bi-search"></i> Search
                 </button>
 
                 {% if request.args %}
@@ -580,7 +660,7 @@
 
             <div class="job-card-header">
                 <div class="job-icon-box">
-                    <i class="bi bi-hammer"></i>
+                    <i class="bi bi-briefcase-fill"></i>
                 </div>
                 <div class="job-title-group">
                     <a href="{{ url_for('labour.job_detail', job_id=job.id) }}" class="job-title">
@@ -598,13 +678,13 @@
 
             <div class="job-meta">
                 {% if job.city %}
-                <span class="meta-chip">
+                <span class="meta-chip location">
                     <i class="bi bi-geo-alt-fill"></i>
                     {{ job.city }}{% if job.pincode %} — {{ job.pincode }}{% endif %}
                 </span>
                 {% endif %}
                 {% if job.locality %}
-                <span class="meta-chip">
+                <span class="meta-chip location">
                     <i class="bi bi-map-fill"></i> {{ job.locality }}
                 </span>
                 {% endif %}
