@@ -1,55 +1,382 @@
 {% extends "base.html" %}
-
 {% block title %}Contractor Dashboard{% endblock %}
-
 {% block content %}
+<style>
+    .dashboard { display:flex; flex-direction:column; gap:22px; }
 
-<h2 class="mb-4">Welcome, {{ current_user.username }}</h2>
+    /* ── Icon tints ───────────────────────────────────────── */
+    .icon-blue   { background:rgba(37,99,235,0.08);  color:#3b82f6; }
+    .icon-amber  { background:rgba(245,158,11,0.08); color:#f59e0b; }
+    .icon-green  { background:rgba(22,163,74,0.08);  color:#16a34a; }
+    .icon-slate  { background:rgba(100,116,139,0.1); color:#64748b; }
+    [data-theme="dark"] .icon-blue  { background:rgba(59,130,246,0.12);  color:#60a5fa; }
+    [data-theme="dark"] .icon-amber { background:rgba(245,158,11,0.12);  color:#fbbf24; }
+    [data-theme="dark"] .icon-green { background:rgba(74,222,128,0.1);   color:#4ade80; }
+    [data-theme="dark"] .icon-slate { background:rgba(148,163,184,0.1);  color:#94a3b8; }
 
-<div class="row">
+    /* ── Welcome banner — card style from new template ───── */
+    .welcome-banner {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 32px 36px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        position: relative;
+        animation: fadeInUp 0.4s ease both;
+        box-shadow: var(--shadow-md);
+    }
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2563eb 0%, #f59e0b 50%, #f97316 100%);
+        border-radius: 24px 24px 0 0;
+    }
+    .welcome-left { position:relative; z-index:1; }
+    .welcome-greeting {
+        font-family: 'Inter', sans-serif; font-size:0.9rem; font-weight:600;
+        color:#f59e0b; margin:0 0 6px; letter-spacing:0.02em;
+    }
+    .welcome-name {
+        font-family: 'Poppins', sans-serif; font-size:1.8rem; font-weight:700;
+        color: var(--text-primary);
+        margin:0 0 12px; line-height:1.2;
+    }
+    .welcome-chips { display:flex; gap:10px; flex-wrap:wrap; }
+    .welcome-chip {
+        display:inline-flex; align-items:center; gap:6px;
+        padding:6px 14px;
+        background:var(--input-bg); border:1px solid var(--border-color);
+        border-radius:30px;
+        font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:600;
+        color:var(--text-secondary); transition:all 0.2s;
+    }
+    .welcome-chip:hover { border-color:#f59e0b; transform:translateY(-1px); }
+    .welcome-right { position:relative; z-index:1; display:flex; gap:20px; }
+    .banner-stat {
+        text-align:center; padding:14px 24px;
+        background:var(--input-bg); border:1px solid var(--border-color);
+        border-radius:16px; min-width:100px; transition:all 0.2s;
+    }
+    .banner-stat:hover { border-color:#f59e0b; transform:translateY(-2px); box-shadow:var(--shadow-sm); }
+    .banner-stat-num {
+        font-family:'Poppins',sans-serif; font-size:2rem; font-weight:800;
+        color:#f59e0b; line-height:1; display:block;
+    }
+    .banner-stat-label {
+        font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:600;
+        color:var(--text-muted); margin-top:6px; display:block;
+        text-transform:uppercase; letter-spacing:0.04em;
+    }
+    @media(max-width:600px) {
+        .welcome-banner { flex-direction:column; align-items:flex-start; padding:24px; }
+        .welcome-right { width:100%; }
+        .banner-stat { flex:1; min-width:auto; padding:12px 16px; }
+        .banner-stat-num { font-size:1.6rem; }
+    }
 
-    <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3">
-            <h5>Jobs Posted</h5>
-            <h3>{{ jobs_posted }}</h3>
+    /* ── Stats grid ───────────────────────────────────────── */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    @media(max-width:800px){ .stats-grid{ grid-template-columns:repeat(2,1fr); } }
+
+    .stat-card {
+        background:var(--bg-card); border:1px solid var(--border-color);
+        border-radius:14px; box-shadow:var(--shadow-sm);
+        padding:16px 18px; display:flex; align-items:center; gap:12px;
+        animation:fadeInUp 0.4s ease both; transition:box-shadow 0.2s,transform 0.2s;
+    }
+    .stat-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+    .stat-card:nth-child(1){ animation-delay:0.06s; }
+    .stat-card:nth-child(2){ animation-delay:0.10s; }
+    .stat-card:nth-child(3){ animation-delay:0.14s; }
+    .stat-card:nth-child(4){ animation-delay:0.18s; }
+    .stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .stat-body { flex:1; min-width:0; }
+    .stat-num { font-family:'Poppins',sans-serif; font-size:1.5rem; font-weight:800; color:var(--text-primary); line-height:1; }
+    .stat-lbl { font-family:'Inter',sans-serif; font-size:0.73rem; font-weight:600; color:var(--text-muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.04em; }
+
+    /* ── Post job CTA ─────────────────────────────────────── */
+    .post-job-cta {
+        display:flex; align-items:center; justify-content:space-between; gap:16px;
+        background:linear-gradient(135deg,rgba(245,158,11,0.05),rgba(249,115,22,0.05));
+        border:1px dashed rgba(245,158,11,0.3);
+        border-radius:14px; padding:18px 22px;
+        animation:fadeInUp 0.4s ease both; animation-delay:0.22s;
+    }
+    [data-theme="dark"] .post-job-cta { background:rgba(245,158,11,0.06); border-color:rgba(245,158,11,0.2); }
+    .post-job-cta-title { font-family:'Poppins',sans-serif; font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 3px; }
+    .post-job-cta-sub   { font-family:'Inter',sans-serif; font-size:0.8rem; color:var(--text-muted); margin:0; }
+    .btn-post-job {
+        display:inline-flex; align-items:center; gap:7px;
+        padding:10px 22px;
+        background:linear-gradient(135deg,#f59e0b,#f97316);
+        color:#fff; border:none; border-radius:10px;
+        font-family:'Poppins',sans-serif; font-weight:600; font-size:0.875rem;
+        text-decoration:none; white-space:nowrap;
+        transition:opacity 0.2s,transform 0.2s,box-shadow 0.2s;
+    }
+    .btn-post-job:hover { opacity:0.92; transform:translateY(-1px); box-shadow:0 6px 20px rgba(245,158,11,0.3); color:#fff; text-decoration:none; }
+
+    /* ── Shared card ──────────────────────────────────────── */
+    .lwms-card {
+        background:var(--bg-card); border:1px solid var(--border-color);
+        border-radius:16px; box-shadow:var(--shadow-sm);
+        overflow:hidden; animation:fadeInUp 0.4s ease both;
+    }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    .card-head { padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-color); }
+    .card-title { font-family:'Poppins',sans-serif; font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px; }
+    .card-title-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; }
+    .card-link { font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:#f59e0b; text-decoration:none; }
+    .card-link:hover { text-decoration:underline; }
+    .card-body { padding:14px 20px 18px; }
+
+    /* ── Grids ────────────────────────────────────────────── */
+    .main-grid   { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+    .bottom-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+    @media(max-width:900px) { .main-grid,.bottom-grid { grid-template-columns:1fr; } }
+
+    /* ── List items ───────────────────────────────────────── */
+    .item-list { display:flex; flex-direction:column; gap:8px; }
+    .list-item {
+        display:flex; align-items:center; gap:12px;
+        padding:10px 12px;
+        background:var(--input-bg); border:1px solid var(--border-color);
+        border-radius:10px; text-decoration:none;
+        transition:border-color 0.2s,transform 0.2s;
+    }
+    .list-item:hover { border-color:#f59e0b; transform:translateX(3px); text-decoration:none; }
+    .list-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0; }
+    .list-info { flex:1; min-width:0; }
+    .list-title { font-family:'Poppins',sans-serif; font-size:0.82rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .list-meta  { font-family:'Inter',sans-serif; font-size:0.72rem; color:var(--text-muted); margin-top:1px; }
+
+    /* badges / pills */
+    .pill { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:600; font-family:'Inter',sans-serif; white-space:nowrap; flex-shrink:0; }
+    .pill-blue   { background:rgba(37,99,235,0.08);  color:#3b82f6; }
+    .pill-amber  { background:rgba(245,158,11,0.08); color:#f59e0b; }
+    .pill-green  { background:rgba(22,163,74,0.08);  color:#16a34a; }
+    [data-theme="dark"] .pill-blue  { background:rgba(59,130,246,0.12); color:#60a5fa; }
+    [data-theme="dark"] .pill-amber { background:rgba(251,191,36,0.1);  color:#fbbf24; }
+    [data-theme="dark"] .pill-green { background:rgba(74,222,128,0.1);  color:#4ade80; }
+
+    /* pending avatar */
+    .pending-avatar {
+        width:34px; height:34px; border-radius:50%;
+        background:linear-gradient(135deg,#f59e0b,#f97316);
+        display:flex; align-items:center; justify-content:center;
+        font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+
+    /* most applied bars */
+    .bar-list { display:flex; flex-direction:column; gap:12px; }
+    .bar-row { display:flex; flex-direction:column; gap:4px; }
+    .bar-row-top { display:flex; align-items:center; justify-content:space-between; }
+    .bar-row-label { font-family:'Poppins',sans-serif; font-size:0.82rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%; }
+    .bar-row-count { font-family:'Poppins',sans-serif; font-size:0.78rem; font-weight:700; color:#16a34a; flex-shrink:0; }
+    [data-theme="dark"] .bar-row-count { color:#4ade80; }
+    .bar-track { height:6px; background:var(--border-color); border-radius:99px; overflow:hidden; }
+    .bar-fill  { height:100%; background:linear-gradient(90deg,#f59e0b,#f97316); border-radius:99px; transition:width 1s ease; }
+
+    /* ratings */
+    .rating-item { padding:10px 12px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; }
+    .rating-top  { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .rating-who  { display:flex; align-items:center; gap:7px; font-family:'Inter',sans-serif; font-size:0.8rem; font-weight:600; color:var(--text-primary); }
+    .who-avatar  { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#f59e0b,#f97316); display:flex; align-items:center; justify-content:center; font-size:0.62rem; font-weight:700; color:#fff; }
+    .stars i     { font-size:0.68rem; color:#d97706; }
+    .stars i.empty { color:var(--border-color); }
+    .rating-sub  { font-family:'Inter',sans-serif; font-size:0.72rem; color:var(--text-muted); }
+    .rating-review { font-family:'Inter',sans-serif; font-size:0.78rem; color:var(--text-secondary); line-height:1.5; margin:4px 0 0; }
+
+    /* empty */
+    .empty-state { text-align:center; padding:24px 12px; font-family:'Inter',sans-serif; font-size:0.82rem; color:var(--text-muted); }
+    .empty-state i { font-size:1.5rem; display:block; margin-bottom:6px; opacity:0.4; }
+</style>
+
+<div class="dashboard">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="welcome-left">
+            <div class="welcome-greeting">Contractor Portal 🏗️</div>
+            <div class="welcome-name">{{ current_user.username }}</div>
+            <div class="welcome-chips">
+                <span class="welcome-chip"><i class="bi bi-building"></i> Contractor</span>
+                {% if current_user.city %}<span class="welcome-chip"><i class="bi bi-geo-alt-fill"></i> {{ current_user.city }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="welcome-right">
+            <div class="banner-stat">
+                <span class="banner-stat-num">{{ jobs_posted }}</span>
+                <span class="banner-stat-label">Jobs Posted</span>
+            </div>
+            <div class="banner-stat">
+                <span class="banner-stat-num">{{ pending_count }}</span>
+                <span class="banner-stat-label">Pending</span>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3">
-            <h5>Applications Received</h5>
-            <h3>{{ applications_received }}</h3>
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="bi bi-briefcase-fill"></i></div>
+            <div class="stat-body"><div class="stat-num">{{ jobs_posted }}</div><div class="stat-lbl">Jobs Posted</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-amber"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-body"><div class="stat-num">{{ applications_received }}</div><div class="stat-lbl">Applications</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-body"><div class="stat-num" style="color:#f59e0b;">{{ pending_count }}</div><div class="stat-lbl">Pending</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-slate"><i class="bi bi-star-fill"></i></div>
+            <div class="stat-body"><div class="stat-num">{{ ratings_given }}</div><div class="stat-lbl">Ratings Given</div></div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card text-center shadow-sm p-3">
-            <h5>Ratings Given</h5>
-            <h3>{{ ratings_given }}</h3>
+    <!-- Post Job CTA -->
+    <div class="post-job-cta">
+        <div>
+            <div class="post-job-cta-title">Need workers for a new project?</div>
+            <div class="post-job-cta-sub">Post a job and start receiving applications immediately.</div>
         </div>
+        <a href="{{ url_for('contractor.post_job') }}" class="btn-post-job">
+            <i class="bi bi-plus-circle-fill"></i> Post New Job
+        </a>
     </div>
 
+    <!-- Row 1: Recent Jobs + Pending Applications -->
+    <div class="main-grid">
+
+        <!-- Recent Jobs -->
+        <div class="lwms-card" style="animation-delay:0.14s;">
+            <div class="card-head">
+                <div class="card-title"><div class="card-title-icon icon-blue"><i class="bi bi-briefcase-fill"></i></div>Recent Jobs</div>
+                <a href="{{ url_for('contractor.post_job') }}" class="card-link">Post new →</a>
+            </div>
+            <div class="card-body">
+                {% if recent_jobs %}
+                <div class="item-list">
+                    {% for job in recent_jobs %}
+                    <a href="{{ url_for('contractor.view_applications') }}" class="list-item">
+                        <div class="list-icon icon-blue"><i class="bi bi-hammer"></i></div>
+                        <div class="list-info">
+                            <div class="list-title">{{ job.title }}</div>
+                            <div class="list-meta">{{ job.city }}{% if job.work_type %} · {{ job.work_type }}{% endif %}{% if job.wage %} · ₹{{ job.wage }}/day{% endif %} · {{ job.created_at.strftime('%d %b') }}</div>
+                        </div>
+                        <span class="pill pill-blue">{{ job.applications|length }} apps</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-briefcase"></i>No jobs posted yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pending Applications -->
+        <div class="lwms-card" style="animation-delay:0.19s;">
+            <div class="card-head">
+                <div class="card-title">
+                    <div class="card-title-icon icon-amber"><i class="bi bi-hourglass-split"></i></div>
+                    Needs Your Action
+                    {% if pending_count > 0 %}
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:#f59e0b;color:#fff;border-radius:50%;font-family:'Poppins',sans-serif;font-size:0.65rem;font-weight:700;">{{ pending_count }}</span>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('contractor.view_applications') }}" class="card-link">All →</a>
+            </div>
+            <div class="card-body">
+                {% if pending_applications %}
+                <div class="item-list">
+                    {% for app in pending_applications %}
+                    <a href="{{ url_for('contractor.view_applications') }}" class="list-item">
+                        <div class="pending-avatar">{{ app.labour.username[0].upper() }}</div>
+                        <div class="list-info">
+                            <div class="list-title">{{ app.labour.username }}</div>
+                            <div class="list-meta">{{ app.job.title }} · {{ app.job.city }}</div>
+                        </div>
+                        <span class="pill pill-amber"><i class="bi bi-clock"></i> Pending</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-check-circle"></i>All caught up — no pending applications.</div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Row 2: Most Applied Jobs + Recent Ratings -->
+    <div class="bottom-grid">
+
+        <!-- Most applied jobs — CSS bar chart -->
+        <div class="lwms-card" style="animation-delay:0.24s;">
+            <div class="card-head">
+                <div class="card-title"><div class="card-title-icon icon-green"><i class="bi bi-bar-chart-fill"></i></div>Most Applied Jobs</div>
+            </div>
+            <div class="card-body">
+                {% if jobs_by_applicants %}
+                <div class="bar-list">
+                    {% for job, count in jobs_by_applicants %}
+                    {% set max_count = jobs_by_applicants[0][1] %}
+                    <div class="bar-row">
+                        <div class="bar-row-top">
+                            <span class="bar-row-label">{{ job.title }}</span>
+                            <span class="bar-row-count">{{ count }} apps</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:{{ ((count / max_count) * 100) | int }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-bar-chart"></i>No applications received yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent ratings given -->
+        <div class="lwms-card" style="animation-delay:0.29s;">
+            <div class="card-head">
+                <div class="card-title"><div class="card-title-icon icon-amber"><i class="bi bi-star-fill"></i></div>Recent Ratings Given</div>
+                <a href="{{ url_for('contractor.view_applications') }}" class="card-link">Rate more →</a>
+            </div>
+            <div class="card-body">
+                {% if recent_ratings %}
+                <div class="item-list">
+                    {% for r in recent_ratings %}
+                    <div class="rating-item">
+                        <div class="rating-top">
+                            <div class="rating-who">
+                                <div class="who-avatar">{{ r.labour.username[0].upper() }}</div>
+                                {{ r.labour.username }}
+                            </div>
+                            <div class="stars">
+                                {% for i in range(r.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                                {% for i in range(5 - r.rating) %}<i class="bi bi-star empty"></i>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="rating-sub">{{ r.job.title }}</div>
+                        {% if r.review %}<div class="rating-review">{{ r.review }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-star"></i>No ratings given yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
 </div>
-
-<hr class="my-4">
-
-<div class="mt-3">
-
-    <a class="btn btn-primary"
-       href="{{ url_for('contractor.post_job') }}">
-        Post New Job
-    </a>
-
-    <a class="btn btn-success"
-       href="{{ url_for('contractor.view_applications') }}">
-        View Applications
-    </a>
-
-    <a class="btn btn-danger"
-       href="{{ url_for('auth.logout') }}">
-        Logout
-    </a>
-
-</div>
-
 {% endblock %}

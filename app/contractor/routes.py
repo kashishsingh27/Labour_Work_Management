@@ -4,6 +4,8 @@ from app.extensions import db
 from app.models import Job, Application, Notification, Rating, User
 from flask_mail import Message
 from app.extensions import mail
+from sqlalchemy import func
+
 
 
 contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
@@ -12,24 +14,51 @@ contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
 @contractor.route("/dashboard")
 @login_required
 def contractor_dashboard():
-
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
-    jobs_posted = Job.query.filter_by(contractor_id=current_user.id).count()
+    # Stats
+    jobs_posted           = Job.query.filter_by(contractor_id=current_user.id).count()
+    applications_received = Application.query.join(Job).filter(Job.contractor_id == current_user.id).count()
+    ratings_given         = Rating.query.filter_by(contractor_id=current_user.id).count()
+    pending_count         = Application.query.join(Job).filter(
+                                Job.contractor_id == current_user.id,
+                                Application.status == "Pending"
+                            ).count()
 
-    applications_received = Application.query.join(Job).filter(
-        Job.contractor_id == current_user.id
-    ).count()
+    # Recent jobs posted (last 5)
+    recent_jobs = Job.query.filter_by(contractor_id=current_user.id)\
+                    .order_by(Job.created_at.desc()).limit(5).all()
 
-    ratings_given = Rating.query.filter_by(contractor_id=current_user.id).count()
+    # Pending applications needing action (last 6)
+    pending_applications = Application.query.join(Job).filter(
+                                Job.contractor_id == current_user.id,
+                                Application.status == "Pending"
+                            ).order_by(Application.id.desc()).limit(6).all()
+
+    jobs_by_applicants = db.session.query(
+                                Job, func.count(Application.id).label("app_count")
+                            ).join(Application, Application.job_id == Job.id)\
+                            .filter(Job.contractor_id == current_user.id)\
+                            .group_by(Job.id)\
+                            .order_by(func.count(Application.id).desc())\
+                            .limit(5).all()
+
+    # Recent ratings given (last 4)
+    recent_ratings = Rating.query.filter_by(contractor_id=current_user.id)\
+                        .order_by(Rating.created_at.desc()).limit(4).all()
 
     return render_template(
         "contractor/dashboard.html",
-        jobs_posted=jobs_posted,
-        applications_received=applications_received,
-        ratings_given=ratings_given
+        jobs_posted           = jobs_posted,
+        applications_received = applications_received,
+        ratings_given         = ratings_given,
+        pending_count         = pending_count,
+        recent_jobs           = recent_jobs,
+        pending_applications  = pending_applications,
+        jobs_by_applicants    = jobs_by_applicants,
+        recent_ratings        = recent_ratings,
     )
 
 
@@ -252,27 +281,59 @@ def rate_labour(job_id, labour_id):
 @contractor.route("/profile/<int:user_id>")
 @login_required
 def contractor_profile(user_id):
-    from sqlalchemy import func
     contractor = User.query.get_or_404(user_id)
+    
     if contractor.role != "contractor":
         flash("User is not a contractor.", "danger")
         return redirect(url_for("auth.home"))
-    jobs = Job.query.filter_by(
-        contractor_id=contractor.id
-    ).order_by(Job.created_at.desc()).all()
-    ratings = Rating.query.filter_by(
-        contractor_id=contractor.id
-    ).order_by(Rating.created_at.desc()).all()
-    avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
-        contractor_id=contractor.id
-    ).scalar()
-    avg_rating = round(float(avg_rating), 1) if avg_rating else 0
- 
+
+    jobs_posted = Job.query.filter_by(contractor_id=user_id).count()
+    jobs_list = Job.query.filter_by(contractor_id=user_id)\
+                    .order_by(Job.created_at.desc()).limit(5).all()
+
+    job_ids = [job.id for job in Job.query.filter_by(contractor_id=user_id).all()]
+
+    applications_received = Application.query\
+        .filter(Application.job_id.in_(job_ids)).count() if job_ids else 0
+
+    hires_made = Application.query\
+        .filter(Application.job_id.in_(job_ids), Application.status == "Accepted")\
+        .count() if job_ids else 0
+
+    workers_rated = Rating.query.filter_by(contractor_id=user_id).count()
+
+    recent_applications = Application.query\
+        .filter(Application.job_id.in_(job_ids))\
+        .order_by(Application.id.desc())\
+        .limit(5).all() if job_ids else []
+
+    ratings_list = Rating.query.filter_by(contractor_id=user_id)\
+        .order_by(Rating.created_at.desc()).all()
+
     return render_template(
-        "contractor_profile.html",
+        "contractor/contractor_profile.html",
         contractor=contractor,
-        jobs=jobs,
-        ratings=ratings,
-        avg_rating=avg_rating
+        jobs_posted=jobs_posted,
+        jobs_list=jobs_list,
+        applications_received=applications_received,
+        hires_made=hires_made,
+        workers_rated=workers_rated,
+        recent_applications=recent_applications,
+        ratings_list=ratings_list,
     )
- 
+
+
+@contractor.route("/profile/<int:user_id>/edit", methods=["POST"])
+@login_required
+def edit_contractor_profile(user_id):
+    if current_user.id != user_id:
+        flash("You can only edit your own profile.", "danger")
+        return redirect(url_for("contractor.contractor_profile", user_id=user_id))
+    
+    current_user.username = request.form.get("username", current_user.username).strip()
+    current_user.city = request.form.get("city", current_user.city or "").strip()
+    current_user.phone = request.form.get("phone", current_user.phone or "").strip()
+    
+    db.session.commit()
+    flash("Profile updated successfully.", "success")
+    return redirect(url_for("contractor.contractor_profile", user_id=user_id))
