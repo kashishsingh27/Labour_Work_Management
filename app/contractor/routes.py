@@ -5,7 +5,7 @@ from app.models import Job, Application, Notification, Rating, User
 from flask_mail import Message
 from app.extensions import mail
 from sqlalchemy import func
-
+from datetime import datetime
 
 
 contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
@@ -29,7 +29,7 @@ def contractor_dashboard():
 
     # Recent jobs posted (last 5)
     recent_jobs = Job.query.filter_by(contractor_id=current_user.id)\
-                    .order_by(Job.created_at.desc()).limit(5).all()
+                    .order_by(Job.created_at.desc()).limit(4).all()
 
     # Pending applications needing action (last 6)
     pending_applications = Application.query.join(Job).filter(
@@ -140,7 +140,6 @@ LWMS Team
 @contractor.route("/applications")
 @login_required
 def view_applications():
-
     if current_user.role != "contractor":
         flash("Access denied.")
         return redirect(url_for("auth.login"))
@@ -148,10 +147,14 @@ def view_applications():
     jobs = Job.query.filter_by(contractor_id=current_user.id).all()
 
     applications = []
-
     for job in jobs:
         for app in job.applications:
             applications.append(app)
+
+    applications.sort(
+        key=lambda a: a.created_at if a.created_at else datetime.min,
+        reverse=True
+    )
 
     return render_template(
         "contractor/applications.html",
@@ -282,46 +285,27 @@ def rate_labour(job_id, labour_id):
 @login_required
 def contractor_profile(user_id):
     contractor = User.query.get_or_404(user_id)
-    
     if contractor.role != "contractor":
         flash("User is not a contractor.", "danger")
         return redirect(url_for("auth.home"))
 
-    jobs_posted = Job.query.filter_by(contractor_id=user_id).count()
-    jobs_list = Job.query.filter_by(contractor_id=user_id)\
-                    .order_by(Job.created_at.desc()).limit(5).all()
+    jobs_list             = Job.query.filter_by(contractor_id=user_id).order_by(Job.created_at.desc()).all()
+    job_ids               = [job.id for job in jobs_list]
+    applications_received = Application.query.filter(Application.job_id.in_(job_ids)).count() if job_ids else 0
+    hires_made            = Application.query.filter(Application.job_id.in_(job_ids), Application.status == "Accepted").count() if job_ids else 0
+    pending_apps          = Application.query.filter(Application.job_id.in_(job_ids), Application.status == "Pending").count() if job_ids else 0
+    workers_rated         = Rating.query.filter_by(contractor_id=user_id).count()
+    ratings_list          = Rating.query.filter_by(contractor_id=user_id).order_by(Rating.created_at.desc()).all()
 
-    job_ids = [job.id for job in Job.query.filter_by(contractor_id=user_id).all()]
-
-    applications_received = Application.query\
-        .filter(Application.job_id.in_(job_ids)).count() if job_ids else 0
-
-    hires_made = Application.query\
-        .filter(Application.job_id.in_(job_ids), Application.status == "Accepted")\
-        .count() if job_ids else 0
-
-    workers_rated = Rating.query.filter_by(contractor_id=user_id).count()
-
-    recent_applications = Application.query\
-        .filter(Application.job_id.in_(job_ids))\
-        .order_by(Application.id.desc())\
-        .limit(5).all() if job_ids else []
-
-    ratings_list = Rating.query.filter_by(contractor_id=user_id)\
-        .order_by(Rating.created_at.desc()).all()
-
-    return render_template(
-        "contractor/contractor_profile.html",
+    return render_template("contractor/contractor_profile.html",
         contractor=contractor,
-        jobs_posted=jobs_posted,
         jobs_list=jobs_list,
         applications_received=applications_received,
         hires_made=hires_made,
+        pending_apps=pending_apps,
         workers_rated=workers_rated,
-        recent_applications=recent_applications,
         ratings_list=ratings_list,
     )
-
 
 @contractor.route("/profile/<int:user_id>/edit", methods=["POST"])
 @login_required
@@ -337,3 +321,19 @@ def edit_contractor_profile(user_id):
     db.session.commit()
     flash("Profile updated successfully.", "success")
     return redirect(url_for("contractor.contractor_profile", user_id=user_id))
+
+@contractor.route("/job/<int:job_id>/delete", methods=["POST"])
+@login_required
+def delete_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    if current_user.id != job.contractor_id:
+        flash("Unauthorized.", "danger")
+        return redirect(url_for("contractor.view_applications"))
+    # Delete related records first
+    Application.query.filter_by(job_id=job.id).delete()
+    Notification.query.filter_by(job_id=job.id).delete()
+    Rating.query.filter_by(job_id=job.id).delete()
+    db.session.delete(job)
+    db.session.commit()
+    flash("Job deleted successfully.", "success")
+    return redirect(url_for("contractor.view_applications"))

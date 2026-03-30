@@ -23,7 +23,7 @@
     .card-title { font-family:'Poppins',sans-serif; font-size:0.9rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px; }
     .card-title-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; }
     .card-body { padding:14px 20px 18px; }
-    .card-link { font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:var(--accent); text-decoration:none; }
+    .card-link { font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; color:#f59e0b; text-decoration:none; }
     .card-link:hover { text-decoration:underline; }
 
     /* identity */
@@ -57,36 +57,41 @@
     .btn-save:hover { opacity:0.9; transform:translateY(-1px); }
     .btn-cancel { flex:1; background:transparent; color:var(--text-muted); border:1.5px solid var(--border-color); border-radius:9px; padding:9px; font-family:'Poppins',sans-serif; font-weight:600; font-size:0.82rem; cursor:pointer; transition:all 0.2s; }
     .btn-cancel:hover { border-color:#f59e0b; color:#f59e0b; }
-
     .member-since { display:flex; align-items:center; gap:7px; padding:9px 20px; border-top:1px solid var(--border-color); font-family:'Inter',sans-serif; font-size:0.75rem; color:var(--text-muted); }
 
-    /* mini stats */
-    .mini-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 20px 16px; }
-    .mini-stat { background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; padding:10px 12px; text-align:center; }
-    .mini-stat-num { font-family:'Poppins',sans-serif; font-size:1.25rem; font-weight:800; color:var(--text-primary); display:block; line-height:1; }
-    .mini-stat-lbl { font-family:'Inter',sans-serif; font-size:0.68rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-top:3px; display:block; }
+    /* hire rate chart — half doughnut */
+    .chart-wrap { position:relative; height:120px; overflow:hidden; }
+    .chart-wrap canvas { position:absolute; top:0; left:0; width:100% !important; height:240px !important; }
+    .chart-center { position:absolute; bottom:0; left:0; right:0; text-align:center; pointer-events:none; }
+    .chart-pct { font-family:'Poppins',sans-serif; font-size:1.4rem; font-weight:800; color:var(--text-primary); line-height:1; display:block; }
+    .chart-lbl { font-family:'Inter',sans-serif; font-size:0.65rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; display:block; }
+    .chart-legend { display:flex; flex-direction:column; gap:6px; margin-top:14px; }
+    .legend-row { display:flex; align-items:center; justify-content:space-between; font-family:'Inter',sans-serif; font-size:0.78rem; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .legend-label { display:flex; align-items:center; gap:6px; color:var(--text-secondary); }
+    .legend-val { font-family:'Poppins',sans-serif; font-weight:700; color:var(--text-primary); }
 
     /* lists */
     .item-list { display:flex; flex-direction:column; gap:7px; }
     .list-item { display:flex; align-items:center; gap:11px; padding:9px 11px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; text-decoration:none; transition:border-color 0.2s,transform 0.2s; }
-    .list-item:hover { border-color:var(--accent); transform:translateX(3px); text-decoration:none; }
+    .list-item:hover { border-color:#f59e0b; transform:translateX(3px); text-decoration:none; }
     .list-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.82rem; flex-shrink:0; }
     .list-info { flex:1; min-width:0; }
     .list-title { font-family:'Poppins',sans-serif; font-size:0.82rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .list-meta { font-family:'Inter',sans-serif; font-size:0.7rem; color:var(--text-muted); margin-top:1px; }
     .pill { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:'Inter',sans-serif; flex-shrink:0; }
-    .pill-green  { background:rgba(16,185,129,0.08);  color:#10b981; }
-    .pill-amber  { background:rgba(245,158,11,0.08);  color:#f59e0b; }
-    .pill-red    { background:rgba(220,38,38,0.08);   color:#dc2626; }
-    [data-theme="dark"] .pill-green { background:rgba(74,222,128,0.1); color:#4ade80; }
-    [data-theme="dark"] .pill-amber { background:rgba(251,191,36,0.1); color:#fbbf24; }
-    [data-theme="dark"] .pill-red   { background:rgba(248,113,113,0.1); color:#f87171; }
+    .pill-green { background:rgba(22,163,74,0.08);  color:#16a34a; }
+    .pill-amber { background:rgba(245,158,11,0.08); color:#f59e0b; }
+    .pill-red   { background:rgba(220,38,38,0.08);  color:#dc2626; }
+    [data-theme="dark"] .pill-green { background:rgba(74,222,128,0.1);   color:#4ade80; }
+    [data-theme="dark"] .pill-amber { background:rgba(251,191,36,0.1);   color:#fbbf24; }
+    [data-theme="dark"] .pill-red   { background:rgba(248,113,113,0.1);  color:#f87171; }
 
     /* ratings */
     .rating-item { padding:10px 12px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; }
-    .rating-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
-    .rating-who { display:flex; align-items:center; gap:6px; font-family:'Inter',sans-serif; font-size:0.8rem; font-weight:600; color:var(--text-primary); }
-    .who-avatar { width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#f59e0b,#f97316); display:flex; align-items:center; justify-content:center; font-size:0.62rem; font-weight:700; color:#fff; }
+    .rating-top  { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .rating-who  { display:flex; align-items:center; gap:6px; font-family:'Inter',sans-serif; font-size:0.8rem; font-weight:600; color:var(--text-primary); }
+    .who-avatar  { width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,#f59e0b,#f97316); display:flex; align-items:center; justify-content:center; font-size:0.62rem; font-weight:700; color:#fff; }
     .stars { display:flex; gap:2px; }
     .stars i { font-size:0.68rem; color:#d97706; }
     .stars i.empty { color:var(--border-color); }
@@ -149,78 +154,61 @@
                 <div class="member-since"><i class="bi bi-calendar3"></i> Member since {{ contractor.created_at.strftime('%B %Y') }}</div>
             </div>
 
-            <!-- Stats -->
-            <div class="lwms-card" style="animation-delay:0.10s;">
-                <div class="card-head">
-                    <div class="card-title"><div class="card-title-icon icon-slate"><i class="bi bi-bar-chart-fill"></i></div>Overview</div>
-                </div>
-                <div class="mini-stats">
-                    <div class="mini-stat"><span class="mini-stat-num" style="color:#f59e0b;">{{ jobs_posted }}</span><span class="mini-stat-lbl">Posted</span></div>
-                    <div class="mini-stat"><span class="mini-stat-num">{{ applications_received }}</span><span class="mini-stat-lbl">Applied</span></div>
-                    <div class="mini-stat"><span class="mini-stat-num" style="color:#16a34a;">{{ hires_made }}</span><span class="mini-stat-lbl">Hired</span></div>
-                    <div class="mini-stat"><span class="mini-stat-num">{{ workers_rated }}</span><span class="mini-stat-lbl">Rated</span></div>
-                </div>
-            </div>
-
         </div>
 
         <!-- Main content -->
         <div style="display:flex;flex-direction:column;gap:16px;">
 
-            <!-- Jobs posted -->
+            <!-- Hire Rate Chart -->
             <div class="lwms-card" style="animation-delay:0.08s;">
                 <div class="card-head">
-                    <div class="card-title"><div class="card-title-icon icon-blue"><i class="bi bi-briefcase-fill"></i></div>Jobs Posted</div>
-                    {% if current_user.id == contractor.id %}<a href="{{ url_for('contractor.post_job') }}" class="card-link">+ New job</a>{% endif %}
-                </div>
-                <div class="card-body">
-                    {% if jobs_list %}
-                    <div class="item-list">
-                        {% for job in jobs_list %}
-                        <a href="{{ url_for('labour.job_detail', job_id=job.id) }}" class="list-item">
-                            <div class="list-icon icon-blue"><i class="bi bi-tools"></i></div>
-                            <div class="list-info">
-                                <div class="list-title">{{ job.title }}</div>
-                                <div class="list-meta">{{ job.city }}{% if job.work_type %} · {{ job.work_type }}{% endif %}{% if job.wage %} · ₹{{ job.wage }}/day{% endif %}</div>
-                            </div>
-                            <span class="pill pill-green"><i class="bi bi-play-circle-fill"></i> Active</span>
-                        </a>
-                        {% endfor %}
+                    <div class="card-title">
+                        <div class="card-title-icon icon-green"><i class="bi bi-graph-up-arrow"></i></div>
+                        Hire Rate
                     </div>
-                    {% else %}
-                    <div class="empty-state"><i class="bi bi-briefcase"></i>No jobs posted yet.</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Recent applications -->
-            <div class="lwms-card" style="animation-delay:0.13s;">
-                <div class="card-head">
-                    <div class="card-title"><div class="card-title-icon icon-green"><i class="bi bi-people-fill"></i></div>Recent Applications</div>
-                    {% if current_user.id == contractor.id %}<a href="{{ url_for('contractor.view_applications') }}" class="card-link">View all →</a>{% endif %}
                 </div>
                 <div class="card-body">
-                    {% if recent_applications %}
-                    <div class="item-list">
-                        {% for app in recent_applications %}
-                        <div class="list-item" style="cursor:default;">
-                            <div class="list-icon icon-green"><i class="bi bi-person-badge"></i></div>
-                            <div class="list-info">
-                                <div class="list-title">{{ app.labour.username }}</div>
-                                <div class="list-meta">{{ app.job.title }}{% if app.created_at %} · {{ app.created_at.strftime('%d %b %Y') }}{% endif %}</div>
+                    {% if applications_received > 0 %}
+                        {% set hire_rate = ((hires_made / applications_received) * 100) | round(1) %}
+                        {% set rejected = applications_received - hires_made - pending_apps %}
+                    {% else %}
+                        {% set hire_rate = 0 %}
+                        {% set rejected = 0 %}
+                    {% endif %}
+                    <div style="display:flex;gap:24px;align-items:center;">
+                        <div style="flex:1;position:relative;">
+                            <div class="chart-wrap">
+                                <canvas id="hireChart"></canvas>
+                                <div class="chart-center">
+                                    <span class="chart-pct">{{ hire_rate }}%</span>
+                                    <span class="chart-lbl">Hired</span>
+                                </div>
                             </div>
-                            <span class="pill {% if app.status == 'Accepted' %}pill-green{% elif app.status == 'Rejected' %}pill-red{% else %}pill-amber{% endif %}">{{ app.status }}</span>
                         </div>
-                        {% endfor %}
+                        <div class="chart-legend" style="flex:1;margin-top:0;">
+                            <div class="legend-row">
+                                <span class="legend-label"><span class="legend-dot" style="background:#16a34a;"></span>Accepted</span>
+                                <span class="legend-val">{{ hires_made }}</span>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-label"><span class="legend-dot" style="background:#f59e0b;"></span>Pending</span>
+                                <span class="legend-val">{{ pending_apps }}</span>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-label"><span class="legend-dot" style="background:#dc2626;"></span>Rejected</span>
+                                <span class="legend-val">{{ rejected }}</span>
+                            </div>
+                            <div class="legend-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color);">
+                                <span class="legend-label" style="color:var(--text-muted);">Total Applications</span>
+                                <span class="legend-val">{{ applications_received }}</span>
+                            </div>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="empty-state"><i class="bi bi-inbox"></i>No applications received yet.</div>
-                    {% endif %}
                 </div>
             </div>
 
             <!-- Ratings given -->
-            <div class="lwms-card" style="animation-delay:0.18s;">
+            <div class="lwms-card" style="animation-delay:0.13s;">
                 <div class="card-head">
                     <div class="card-title"><div class="card-title-icon icon-amber"><i class="bi bi-star-fill"></i></div>Ratings Given</div>
                 </div>
@@ -230,10 +218,7 @@
                         {% for r in ratings_list[:5] %}
                         <div class="rating-item">
                             <div class="rating-top">
-                                <div class="rating-who">
-                                    <div class="who-avatar">{{ r.labour.username[0].upper() }}</div>
-                                    {{ r.labour.username }}
-                                </div>
+                                <div class="rating-who"><div class="who-avatar">{{ r.labour.username[0].upper() }}</div>{{ r.labour.username }}</div>
                                 <div class="stars">
                                     {% for i in range(r.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
                                     {% for i in range(5 - r.rating) %}<i class="bi bi-star empty"></i>{% endfor %}
@@ -253,6 +238,68 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    {% if applications_received > 0 %}
+    {% set rejected = applications_received - hires_made - pending_apps %}
+    new Chart(document.getElementById('hireChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Accepted', 'Pending', 'Rejected'],
+            datasets: [{
+                data: [{{ hires_made }}, {{ pending_apps }}, {{ [rejected, 0] | max }}],
+                backgroundColor: ['#16a34a', '#f59e0b', '#dc2626'],
+                borderColor: isDark ? '#1e2235' : '#fff',
+                borderWidth: 3,
+                hoverOffset: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            circumference: 180,
+            rotation: -90,
+            cutout: '72%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? '#1e2235' : '#fff',
+                    titleColor: isDark ? '#e8eaf6' : '#1a1f36',
+                    bodyColor: isDark ? '#8a92a6' : '#5a6278',
+                    borderColor: isDark ? '#2a2f4a' : '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { family: 'Poppins', weight: '600', size: 12 },
+                    bodyFont: { family: 'Inter', size: 11 },
+                }
+            }
+        }
+    });
+    {% else %}
+    new Chart(document.getElementById('hireChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [1],
+                backgroundColor: [isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'],
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            circumference: 180,
+            rotation: -90,
+            cutout: '72%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+    });
+    {% endif %}
+})();
+</script>
 
 <script>
     function toggleEdit(show) {
