@@ -5,3 +5,4 @@ site.db
 .env
 instance/
 *.bat
+*.db
