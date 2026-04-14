@@ -7,18 +7,18 @@ from app.extensions import mail
 from sqlalchemy import func
 from datetime import datetime
 
-
+# Contractor blueprint — handles dashboard, job posting, applications, ratings, and profile
 contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
-
 
 @contractor.route("/dashboard")
 @login_required
 def contractor_dashboard():
+    # Aggregate stats for the dashboard summary cards
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
-    # Stats
+    # Feed data for dashboard cards — capped to keep the UI clean
     jobs_posted           = Job.query.filter_by(contractor_id=current_user.id).count()
     applications_received = Application.query.join(Job).filter(Job.contractor_id == current_user.id).count()
     ratings_given         = Rating.query.filter_by(contractor_id=current_user.id).count()
@@ -36,7 +36,8 @@ def contractor_dashboard():
                                 Job.contractor_id == current_user.id,
                                 Application.status == "Pending"
                             ).order_by(Application.id.desc()).limit(6).all()
-
+    
+    # Rank jobs by number of applicants for the bar chart
     jobs_by_applicants = db.session.query(
                                 Job, func.count(Application.id).label("app_count")
                             ).join(Application, Application.job_id == Job.id)\
@@ -65,7 +66,7 @@ def contractor_dashboard():
 @contractor.route("/post-job", methods=["GET", "POST"])
 @login_required
 def post_job():
-
+    # Notify all labour users in the same city via in-app notification and email
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
@@ -96,7 +97,7 @@ def post_job():
         db.session.add(job)
         db.session.commit()
 
-        # notify labours
+        # Send notification and email to every labour worker in the job's city
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
@@ -140,6 +141,8 @@ LWMS Team
 @contractor.route("/applications")
 @login_required
 def view_applications():
+    # Collect all applications across all contractor's jobs, then sort newest first
+    # created_at may be None for older records — fall back to datetime.min to avoid crash
     if current_user.role != "contractor":
         flash("Access denied.")
         return redirect(url_for("auth.login"))
@@ -165,7 +168,7 @@ def view_applications():
 @contractor.route("/application/<int:app_id>/accept")
 @login_required
 def accept_application(app_id):
-
+    # Update status, notify the labour in-app, and send acceptance email with contractor contact details
     application = Application.query.get_or_404(app_id)
 
     if current_user.id != application.job.contractor_id:
@@ -217,7 +220,7 @@ def accept_application(app_id):
 @contractor.route("/application/<int:app_id>/reject")
 @login_required
 def reject_application(app_id):
-
+    # Update status and send in-app notification — no email on rejection
     application = Application.query.get_or_404(app_id)
 
     if current_user.id != application.job.contractor_id:
@@ -241,7 +244,7 @@ def reject_application(app_id):
 @contractor.route("/rate/<int:job_id>/<int:labour_id>", methods=["GET","POST"])
 @login_required
 def rate_labour(job_id, labour_id):
-
+    # Prevent duplicate ratings for the same job-labour-contractor combination
     if current_user.role != "contractor":
         return redirect(url_for("auth.login"))
 
@@ -284,6 +287,7 @@ def rate_labour(job_id, labour_id):
 @contractor.route("/profile/<int:user_id>")
 @login_required
 def contractor_profile(user_id):
+    # Compute hire rate breakdown (accepted / pending) for the profile doughnut chart
     contractor = User.query.get_or_404(user_id)
     if contractor.role != "contractor":
         flash("User is not a contractor.", "danger")
@@ -325,6 +329,8 @@ def edit_contractor_profile(user_id):
 @contractor.route("/job/<int:job_id>/delete", methods=["POST"])
 @login_required
 def delete_job(job_id):
+    # Cascade delete — remove applications, notifications and ratings before deleting the job
+    # SQLite doesn't enforce foreign key constraints by default so we handle this manually
     job = Job.query.get_or_404(job_id)
     if current_user.id != job.contractor_id:
         flash("Unauthorized.", "danger")

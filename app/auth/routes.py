@@ -8,10 +8,12 @@ from sqlalchemy import func
 from flask_mail import Message
 from app.extensions import mail
 
+# Auth blueprint — handles registration, login, logout, and notifications
 auth = Blueprint("auth", __name__)
 
 @auth.route("/")
 def home():
+    # Redirect authenticated users to their role-specific dashboard
     if current_user.is_authenticated:
         if current_user.role == "contractor":
             return redirect(url_for("contractor.contractor_dashboard"))
@@ -28,7 +30,8 @@ def register():
         role = request.form.get("role")
         city = request.form.get("city")
         phone = request.form.get("phone")
-
+ 
+        # Prevent duplicate accounts
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             flash("Email already registered. Please login.", "danger")
@@ -55,7 +58,7 @@ def login():
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
-
+            # Route to the correct dashboard based on role
             if user.role == "contractor":
                 return redirect(url_for("contractor.contractor_dashboard"))
             else:
@@ -75,7 +78,7 @@ def logout():
 @auth.route("/notifications")
 @login_required
 def view_notifications():
-
+# Fetch all notifications for the current user, newest first
     notifications = Notification.query.filter_by(
         user_id=current_user.id
     ).order_by(Notification.created_at.desc()).all()
@@ -85,6 +88,9 @@ def view_notifications():
         n.is_read = True
 
     db.session.commit()
+
+    # These counts are computed after marking read, so unread_count will always be 0 here.
+    # Keep them in case the logic changes to mark-on-click in future.
     unread_count = sum(1 for n in notifications if not n.is_read)
     accepted_count = sum(1 for n in notifications if 'accepted' in n.message.lower())
     rejected_count = sum(1 for n in notifications if 'rejected' in n.message.lower())
@@ -96,4 +102,3 @@ def view_notifications():
         accepted_count=accepted_count,
         rejected_count=rejected_count
     )
-

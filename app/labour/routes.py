@@ -11,8 +11,8 @@ from sqlalchemy import distinct
 from datetime import datetime, timedelta
 
 
+# Labour blueprint — handles dashboard, job browsing, applications, and profile
 labour = Blueprint("labour", __name__, url_prefix="/labour")
-
 
 from sqlalchemy import func
 
@@ -22,6 +22,7 @@ def labour_dashboard():
     if current_user.role != "labour":
         return redirect(url_for("auth.login"))
 
+    # Application status breakdown for stats cards and doughnut chart
     total_applications = Application.query.filter_by(labour_id=current_user.id).count()
     pending_count      = Application.query.filter_by(labour_id=current_user.id, status="Pending").count()
     accepted_count     = Application.query.filter_by(labour_id=current_user.id, status="Accepted").count()
@@ -31,9 +32,12 @@ def labour_dashboard():
         .filter_by(labour_id=current_user.id)\
         .order_by(Application.created_at.desc())\
         .limit(5).all()
+
     avg_rating = db.session.query(func.avg(Rating.rating)).filter_by(
-    labour_id=current_user.id).scalar()
+        labour_id=current_user.id).scalar()
     avg_rating = round(float(avg_rating), 1) if avg_rating else 0
+
+    # Build last 7 days activity data for the weekly bar chart
     today = datetime.utcnow().date()
     weekly_labels = []
     weekly_counts = []
@@ -47,6 +51,8 @@ def labour_dashboard():
         weekly_counts.append(count)
 
     available_jobs = Job.query.count()
+
+    # Jobs near the user — only runs if the user has set their city
     nearby_jobs = Job.query.filter(
         Job.city.ilike(f"%{current_user.city}%")
     ).order_by(Job.created_at.desc()).limit(6).all() if current_user.city else []
@@ -64,16 +70,17 @@ def labour_dashboard():
         avg_rating          = avg_rating,
     )
 
+
 @labour.route("/jobs")
 @login_required
 def view_jobs():
-
     if current_user.role != "labour":
         return redirect(url_for("auth.login"))
 
-    city     = request.args.get("city")
-    pincode  = request.args.get("pincode")
-    min_wage = request.args.get("min_wage")
+    # Optional filters — all are query params so the form preserves state on submit
+    city      = request.args.get("city")
+    pincode   = request.args.get("pincode")
+    min_wage  = request.args.get("min_wage")
     work_type = request.args.get("work_type")
 
     query = Job.query
@@ -89,6 +96,7 @@ def view_jobs():
 
     jobs = query.order_by(Job.created_at.desc()).all()
 
+    # Dynamically build work type dropdown from DB — only shows types that exist
     work_types = db.session.query(distinct(Job.work_type))\
         .filter(Job.work_type != None, Job.work_type != "")\
         .order_by(Job.work_type)\
@@ -101,13 +109,13 @@ def view_jobs():
 @labour.route("/apply/<int:job_id>")
 @login_required
 def apply_job(job_id):
-
     if current_user.role != "labour":
         flash("Only labour can apply for jobs.")
         return redirect(url_for("labour.view_jobs"))
 
     job = Job.query.get_or_404(job_id)
 
+    # Prevent duplicate applications for the same job
     existing_application = Application.query.filter_by(
         labour_id=current_user.id,
         job_id=job.id
@@ -121,15 +129,14 @@ def apply_job(job_id):
         labour_id=current_user.id,
         job_id=job.id
     )
-
     db.session.add(application)
     db.session.commit()
 
+    # Notify the contractor by email when a new application comes in
     msg = Message(
-    subject="New Job Application Received",
-    recipients=[job.contractor.email]
-)
-
+        subject="New Job Application Received",
+        recipients=[job.contractor.email]
+    )
     msg.body = f"""
     Hello {job.contractor.username},
 
@@ -143,28 +150,25 @@ def apply_job(job_id):
 
     LWMS Team
     """
-
-    mail.send(msg)    
+    mail.send(msg)
 
     flash("Application submitted successfully!")
-
     return redirect(url_for("labour.view_jobs"))
 
 
 @labour.route("/job/<int:job_id>/simple")
 @login_required
 def view_single_job(job_id):
-
+    # Lightweight job view used when redirecting from the applications page
     job = Job.query.get_or_404(job_id)
-
     return render_template("labour/single_job.html", job=job)
+
 
 @labour.route("/job/<int:job_id>")
 @login_required
 def job_detail(job_id):
-
+    # Full job detail page — accessible by both labour and contractors
     job = Job.query.get_or_404(job_id)
-
     return render_template("labour/job_details.html", job=job)
 
 
@@ -176,7 +180,7 @@ def labour_profile(user_id):
         flash("User is not a labour worker.", "danger")
         return redirect(url_for("auth.home"))
 
-    # Completed jobs only (Accepted applications)
+    # Only Accepted applications count as completed work
     completed_applications = Application.query.filter_by(
         labour_id=labour_user.id,
         status="Accepted"
@@ -191,12 +195,10 @@ def labour_profile(user_id):
     ).scalar()
     avg_rating = round(float(avg_rating), 1) if avg_rating else 0
 
-    jobs_completed = len(completed_applications)
-    total_applications = Application.query.filter_by(
-        labour_id=labour_user.id
-    ).count()
+    jobs_completed     = len(completed_applications)
+    total_applications = Application.query.filter_by(labour_id=labour_user.id).count()
 
-    # Star distribution for chart [1★, 2★, 3★, 4★, 5★]
+    # Count per star value (1–5) for the rating distribution bar chart
     star_distribution = []
     for star in range(1, 6):
         count = Rating.query.filter_by(
@@ -221,6 +223,7 @@ def labour_profile(user_id):
 @labour.route("/profile/<int:user_id>/edit", methods=["POST"])
 @login_required
 def edit_labour_profile(user_id):
+    # Only the profile owner can edit — prevent URL manipulation
     if current_user.id != user_id:
         flash("You can only edit your own profile.", "danger")
         return redirect(url_for("labour.labour_profile", user_id=user_id))
