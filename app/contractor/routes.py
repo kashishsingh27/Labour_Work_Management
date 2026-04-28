@@ -6,6 +6,10 @@ from flask_mail import Message
 from app.extensions import mail
 from sqlalchemy import func
 from datetime import datetime
+import re
+
+def is_not_empty(value):
+    return value and value.strip() != ""
 
 # Contractor blueprint — handles dashboard, job posting, applications, ratings, and profile
 contractor = Blueprint("contractor", __name__, url_prefix="/contractor")
@@ -66,21 +70,62 @@ def contractor_dashboard():
 @contractor.route("/post-job", methods=["GET", "POST"])
 @login_required
 def post_job():
-    # Notify all labour users in the same city via in-app notification and email
+
+    # Restrict access to contractors only
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
     if request.method == "POST":
 
-        title = request.form.get("title")
-        description = request.form.get("description")
-        city = request.form.get("city")
-        locality = request.form.get("locality")
-        landmark = request.form.get("landmark")
-        pincode = request.form.get("pincode")
-        wage = request.form.get("wage")
-        work_type = request.form.get("work_type")
+        # Get and sanitize inputs
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+        city = request.form.get("city", "").strip()
+        locality = request.form.get("locality", "").strip()
+        landmark = request.form.get("landmark", "").strip()
+        pincode = request.form.get("pincode", "").strip()
+        wage = request.form.get("wage", "").strip()
+        work_type = request.form.get("work_type", "").strip()
+
+        # =========================
+        # Validation
+        # =========================
+
+        if not is_not_empty(title):
+            flash("Job title is required", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if not is_not_empty(city):
+            flash("City is required", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if not is_not_empty(locality):
+            flash("Locality is required", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if not is_not_empty(wage):
+            flash("Wage is required", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if not is_not_empty(work_type):
+            flash("Work type is required", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if not wage.isdigit():
+            flash("Wage must be a valid number", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        if pincode and not pincode.isdigit():
+            flash("Pincode must be numeric", "danger")
+            return redirect(url_for("contractor.post_job"))
+
+        # Convert wage to integer after validation
+        wage = int(wage)
+
+        # =========================
+        # Create Job
+        # =========================
 
         job = Job(
             title=title,
@@ -97,19 +142,23 @@ def post_job():
         db.session.add(job)
         db.session.commit()
 
-        # Send notification and email to every labour worker in the job's city
+        # =========================
+        # Notify Labour Users
+        # =========================
+
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
 
+            # In-app notification
             notification = Notification(
                 user_id=labour.id,
                 message=f"New job posted in {city}: {title}",
                 job_id=job.id
             )
-
             db.session.add(notification)
 
+            # Email notification (will be secured in Day 2)
             msg = Message(
                 subject="New Job Available in Your City",
                 recipients=[labour.email]
@@ -136,7 +185,6 @@ LWMS Team
         return redirect(url_for("contractor.contractor_dashboard"))
 
     return render_template("contractor/post_job.html")
-
 
 @contractor.route("/applications")
 @login_required

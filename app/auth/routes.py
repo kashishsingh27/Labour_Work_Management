@@ -7,6 +7,13 @@ from app.models import Application
 from sqlalchemy import func
 from flask_mail import Message
 from app.extensions import mail
+import re
+
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+def is_not_empty(value):
+    return value and value.strip() != ""
 
 # Auth blueprint — handles registration, login, logout, and notifications
 auth = Blueprint("auth", __name__)
@@ -30,7 +37,18 @@ def register():
         role = request.form.get("role")
         city = request.form.get("city")
         phone = request.form.get("phone")
- 
+        
+        if not is_valid_email(email):
+            flash("Invalid email format", "danger")
+            return redirect(url_for("auth.register"))
+
+        if not is_not_empty(username):
+            flash("Username cannot be empty", "danger")
+            return redirect(url_for("auth.register"))
+
+        if not is_not_empty(password):
+            flash("Password cannot be empty", "danger")
+            return redirect(url_for("auth.register"))
         # Prevent duplicate accounts
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
