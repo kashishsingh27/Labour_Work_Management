@@ -6,6 +6,7 @@ from flask_mail import Message
 from app.extensions import mail
 from sqlalchemy import func
 from datetime import datetime
+from smtplib import SMTPException
 import re
 
 def is_not_empty(value):
@@ -67,18 +68,21 @@ def contractor_dashboard():
     )
 
 
+
 @contractor.route("/post-job", methods=["GET", "POST"])
 @login_required
 def post_job():
 
-    # Restrict access to contractors only
+    # Restrict access
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
     if request.method == "POST":
 
-        # Get and sanitize inputs
+        # =========================
+        # Get & Sanitize Inputs
+        # =========================
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         city = request.form.get("city", "").strip()
@@ -91,7 +95,6 @@ def post_job():
         # =========================
         # Validation
         # =========================
-
         if not is_not_empty(title):
             flash("Job title is required", "danger")
             return redirect(url_for("contractor.post_job"))
@@ -120,32 +123,36 @@ def post_job():
             flash("Pincode must be numeric", "danger")
             return redirect(url_for("contractor.post_job"))
 
-        # Convert wage to integer after validation
+        # Convert wage
         wage = int(wage)
 
         # =========================
-        # Create Job
+        # Create Job (SAFE)
         # =========================
+        try:
+            job = Job(
+                title=title,
+                description=description,
+                city=city,
+                locality=locality,
+                landmark=landmark,
+                pincode=pincode,
+                wage=wage,
+                work_type=work_type,
+                contractor=current_user
+            )
 
-        job = Job(
-            title=title,
-            description=description,
-            city=city,
-            locality=locality,
-            landmark=landmark,
-            pincode=pincode,
-            wage=wage,
-            work_type=work_type,
-            contractor=current_user
-        )
+            db.session.add(job)
+            db.session.commit()
 
-        db.session.add(job)
-        db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash("Error creating job. Please try again.", "danger")
+            return redirect(url_for("contractor.post_job"))
 
         # =========================
-        # Notify Labour Users
+        # Notifications + Emails
         # =========================
-
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
@@ -158,7 +165,7 @@ def post_job():
             )
             db.session.add(notification)
 
-            # Email notification (will be secured in Day 2)
+            # Email (SAFE)
             msg = Message(
                 subject="New Job Available in Your City",
                 recipients=[labour.email]
@@ -177,14 +184,25 @@ Login to the system to apply.
 LWMS Team
 """
 
-            mail.send(msg)
+            try:
+                mail.send(msg)
+            except SMTPException:
+                flash(f"Could not send email to {labour.email}", "warning")
 
-        db.session.commit()
+        # =========================
+        # Commit Notifications (SAFE)
+        # =========================
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            flash("Job created but notifications failed.", "warning")
 
         flash("Job posted successfully!", "success")
         return redirect(url_for("contractor.contractor_dashboard"))
 
     return render_template("contractor/post_job.html")
+
 
 @contractor.route("/applications")
 @login_required
