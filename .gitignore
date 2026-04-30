@@ -6,3 +6,6 @@ site.db
 instance/
 *.bat
 *.db
+*.log
+logs/
+app.log
