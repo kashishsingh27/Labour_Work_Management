@@ -8,6 +8,7 @@ from sqlalchemy import func
 from datetime import datetime
 from smtplib import SMTPException
 import re
+import logging
 
 def is_not_empty(value):
     return value and value.strip() != ""
@@ -69,20 +70,20 @@ def contractor_dashboard():
 
 
 
+from smtplib import SMTPException
+
 @contractor.route("/post-job", methods=["GET", "POST"])
 @login_required
 def post_job():
 
-    # Restrict access
     if current_user.role != "contractor":
         flash("Access denied.", "danger")
         return redirect(url_for("auth.login"))
 
     if request.method == "POST":
 
-        # =========================
-        # Get & Sanitize Inputs
-        # =========================
+        logging.info(f"User {current_user.id} attempting to post a job")
+
         title = request.form.get("title", "").strip()
         description = request.form.get("description", "").strip()
         city = request.form.get("city", "").strip()
@@ -92,9 +93,6 @@ def post_job():
         wage = request.form.get("wage", "").strip()
         work_type = request.form.get("work_type", "").strip()
 
-        # =========================
-        # Validation
-        # =========================
         if not is_not_empty(title):
             flash("Job title is required", "danger")
             return redirect(url_for("contractor.post_job"))
@@ -123,11 +121,10 @@ def post_job():
             flash("Pincode must be numeric", "danger")
             return redirect(url_for("contractor.post_job"))
 
-        # Convert wage
         wage = int(wage)
 
         # =========================
-        # Create Job (SAFE)
+        # CREATE JOB (SAFE)
         # =========================
         try:
             job = Job(
@@ -145,19 +142,21 @@ def post_job():
             db.session.add(job)
             db.session.commit()
 
+            logging.info(f"Job '{title}' created by user {current_user.id}")
+
         except Exception:
             db.session.rollback()
+            logging.error(f"Job creation failed for user {current_user.id}")
             flash("Error creating job. Please try again.", "danger")
             return redirect(url_for("contractor.post_job"))
 
         # =========================
-        # Notifications + Emails
+        # NOTIFICATIONS + EMAIL
         # =========================
         labours = User.query.filter_by(role="labour", city=city).all()
 
         for labour in labours:
 
-            # In-app notification
             notification = Notification(
                 user_id=labour.id,
                 message=f"New job posted in {city}: {title}",
@@ -165,7 +164,6 @@ def post_job():
             )
             db.session.add(notification)
 
-            # Email (SAFE)
             msg = Message(
                 subject="New Job Available in Your City",
                 recipients=[labour.email]
@@ -187,22 +185,24 @@ LWMS Team
             try:
                 mail.send(msg)
             except SMTPException:
+                logging.warning(f"Email failed for {labour.email}")
                 flash(f"Could not send email to {labour.email}", "warning")
 
         # =========================
-        # Commit Notifications (SAFE)
+        # FINAL COMMIT
         # =========================
         try:
             db.session.commit()
+            logging.info(f"Notifications sent for job '{title}' in {city}")
         except Exception:
             db.session.rollback()
+            logging.error(f"Notification commit failed for job '{title}'")
             flash("Job created but notifications failed.", "warning")
 
         flash("Job posted successfully!", "success")
         return redirect(url_for("contractor.contractor_dashboard"))
 
     return render_template("contractor/post_job.html")
-
 
 @contractor.route("/applications")
 @login_required
@@ -277,7 +277,10 @@ def accept_application(app_id):
     Labour Work Management System(LWMS)
     """
 
-    mail.send(msg)
+    try:
+        mail.send(msg)
+    except Exception as e:
+        logging.warning(f"Email failed: {str(e)}")
 
     flash("Application accepted.")
     return redirect(url_for("contractor.view_applications"))
