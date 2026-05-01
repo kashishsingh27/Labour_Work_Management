@@ -8,11 +8,10 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Logging
+    # Logging (Render-friendly)
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(message)s",
-        handlers=[logging.StreamHandler()]
+        format="%(asctime)s | %(levelname)s | %(message)s"
     )
 
     # Initialize extensions
@@ -32,10 +31,5 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(contractor)
     app.register_blueprint(labour)
-
-    # IMPORTANT: create tables
-    with app.app_context():
-        import app.models
-        db.create_all()
 
     return app
