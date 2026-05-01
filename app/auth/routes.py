@@ -167,3 +167,13 @@ def view_notifications():
         accepted_count=accepted_count,
         rejected_count=rejected_count
     )
+
+from flask_migrate import upgrade
+
+@auth.route("/setup-db")
+def setup_db():
+    try:
+        upgrade()
+        return "Database migrated successfully!"
+    except Exception as e:
+        return str(e)
