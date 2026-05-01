@@ -9,27 +9,22 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Setup logging INSIDE app context
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(message)s",
         handlers=[
-            #logging.FileHandler("app.log"),  
-            logging.StreamHandler()  
+            logging.StreamHandler()
         ]
     )
 
-    # Initialise extensions with the app instance
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
 
-    # Redirect unauthenticated users to the login page
     login_manager.login_view = "auth.login"
 
-    # Register blueprints — imports inside function to avoid circular imports
     from app.auth.routes import auth
     from app.contractor.routes import contractor
     from app.labour.routes import labour
@@ -37,5 +32,9 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(contractor)
     app.register_blueprint(labour)
+
+    with app.app_context():
+        import app.models
+        db.create_all()
 
     return app
