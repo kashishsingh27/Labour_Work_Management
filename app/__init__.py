@@ -5,18 +5,17 @@ import logging
 
 
 def create_app():
-    """Application factory — creates and configures the Flask app instance."""
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Logging
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(message)s",
-        handlers=[
-            logging.StreamHandler()
-        ]
+        handlers=[logging.StreamHandler()]
     )
 
+    # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
@@ -25,6 +24,7 @@ def create_app():
 
     login_manager.login_view = "auth.login"
 
+    # Register blueprints
     from app.auth.routes import auth
     from app.contractor.routes import contractor
     from app.labour.routes import labour
@@ -33,6 +33,7 @@ def create_app():
     app.register_blueprint(contractor)
     app.register_blueprint(labour)
 
+    # IMPORTANT: create tables
     with app.app_context():
         import app.models
         db.create_all()
