@@ -184,9 +184,8 @@ LWMS Team
 
             try:
                 mail.send(msg)
-            except SMTPException:
-                logging.warning(f"Email failed for {labour.email}")
-                flash(f"Could not send email to {labour.email}", "warning")
+            except Exception as e:
+                logging.warning(f"Email failed for {labour.email}: {str(e)}")
 
         # =========================
         # FINAL COMMIT
